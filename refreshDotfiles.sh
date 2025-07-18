@@ -1,4 +1,4 @@
-cp ~/.zshrc ./.zshrc
-cp ~/config/hypr/ ./.config/hypr/* 
-cp  ~/.config/waybar/ ./.config/waybar/*
-cp ~/.config/kitty/ ./.config/kitty/
+cp -r ~/.zshrc ./.zshrc
+cp -r ~/.config/hypr/hyprland.conf ./.config/hypr/
+cp -r ~/.config/waybar/* ./.config/waybar/
+cp -r ~/.config/kitty/kitty.conf ./.config/kitty/
