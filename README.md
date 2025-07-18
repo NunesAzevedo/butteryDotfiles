@@ -1,4 +1,4 @@
-# Buttery Dotfiles
+# Buttery Dotfiles 🧈
 
 ## My setup
 This dotfiles work in my machine with Archlinux with Hyprland
