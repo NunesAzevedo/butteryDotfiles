@@ -10,6 +10,7 @@ window#waybar {
     color: #ffffff;
     transition-property: background-color;
     transition-duration: .5s;
+    border-radius: 20px;
 }
 
 window#waybar.hidden {
@@ -96,6 +97,7 @@ button:hover {
 #mpd {
     padding: 0 10px;
     color: #ffffff;
+    border-radius: 20px;
 }
 
 #window,
@@ -199,7 +201,7 @@ label:focus {
 }
 
 #pulseaudio.muted {
-    background-color: #90b1b1;
+    background-color: #0077B6 ;
     color: #2a5c45;
 }
 
