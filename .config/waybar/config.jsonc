@@ -1,18 +1,19 @@
 // -*- mode: jsonc -*-
 {
-    // "layer": "top", // Waybar at top layer
-    // "position": "bottom", // Waybar position (top|bottom|left|right)
+    "layer": "top", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
     "height": 20, // Waybar height (to be removed for auto height)
     "margin": 4,
-    // "width": 1280, // Waybar width
+    //"width": 1280, // Waybar width
     "spacing": 4, // Gaps between modules (4px)
     // Choose the order of the modules
     "modules-left": ["hyprland/workspaces"],
-    "modules-center": ["hyprland/window"],
+    "modules-center": ["clock"],
     "modules-right": [
        // "mpd",
        // "idle_inhibitor",
         "pulseaudio",
+        "bluetooth",
        // "network",
         "power-profiles-daemon",
        // "cpu",
@@ -21,10 +22,9 @@
        // "backlight",
        // "keyboard-state",
        // "sway/language",
+        "tray",
         "battery",
         "battery#bat2",
-        "clock",
-        "tray",
         "custom/power"
     ],
     // Modules configuration
@@ -104,17 +104,23 @@
     },
     "tray": {
        //  "icon-size": 21,
-        "spacing": 10,
+        "spacing": 10
        //  "icons": {
         //   "blueman": "bluetooth",
          //  "TelegramDesktop": "$HOME/.local/share/icons/hicolor/16x16/apps/telegram.png"
         // }
     },
     "clock": {
-        // "timezone": "America/Sao_Paulo",
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        "format-alt": "{:%Y-%m-%d}"
+        "timezone": "America/Sao_Paulo",
+        "tooltip-format": "<big>{:%Y %B}</big>\n <tt><small>{calendar}</small></tt>",
+        "format": "{:%H:%M   |   %d/%m}",
+        //"format": "{time} | {calendar}",
+        //"format-alt": "{:%d / %m}"
     },
+
+    "calendar": {
+        "format": "{:%d/%m/%Y}"
+    }, 
     "cpu": {
         "format": "{usage}% ",
         "tooltip": false
@@ -176,11 +182,11 @@
     },
     "pulseaudio": {
         // "scroll-step": 1, // %, can be a float
-        "format": "{volume}% {icon} {format_source}",
+        "format": "{volume}% {icon}   {format_source}",
         "format-bluetooth": "{volume}% {icon} {format_source}",
         "format-bluetooth-muted": " {icon} {format_source}",
         //"format-muted": " {format_source}",
-        "format-muted": "🤫",
+        "format-muted": "Shhhh 🤫",
         "format-source": "{volume}% ",
         "format-source-muted": "",
         "format-icons": {

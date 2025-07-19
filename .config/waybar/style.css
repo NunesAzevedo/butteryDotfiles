@@ -51,7 +51,9 @@ button:hover {
 
 /* you can set a style on hover for any module like this */
 #pulseaudio:hover {
-    background-color: #a37800;
+    /*background-color: #a37800;*/
+    background-color: #ffffff;
+      color: #000000;
 }
 
 #workspaces button {
@@ -116,17 +118,22 @@ button:hover {
 }
 
 #clock {
-    background-color: #64727D;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 20px;
 }
 
 #battery {
-    background-color: #ffffff;
-    color: #000000;
+    /*background-color: #ffffff;*/
+    background-color: transparent;
+    /*color: #000000;*/
+    color: #ffffff;
 }
 
 #battery.charging, #battery.plugged {
     color: #ffffff;
-    background-color: #26A65B;
+    /*background-color: #26A65B;*/
+    background-color: transparent;
 }
 
 @keyframes blink {
@@ -196,13 +203,17 @@ label:focus {
 }
 
 #pulseaudio {
-    background-color: #f1c40f;
-    color: #000000;
+    /*background-color: #f1c40f;*/
+    background-color: transparent;
+    /*color: #000000;*/
+    color: #ffffff
 }
 
 #pulseaudio.muted {
-    background-color: #0077B6 ;
-    color: #2a5c45;
+    /*background-color: #0077B6 */ ;
+    background-color: transparent ;
+    /*color: #2a5c45;*/
+    color: #ffffff;
 }
 
 #wireplumber {
@@ -237,7 +248,8 @@ label:focus {
 }
 
 #tray {
-    background-color: #2980b9;
+    /*background-color: #2980b9 */;
+    background-color: transparent;
 }
 
 #tray > .passive {
@@ -326,4 +338,8 @@ label:focus {
 
 #privacy-item.audio-out {
     background-color: #0069d4;
+}
+
+#power {
+  background-color: red;
 }
