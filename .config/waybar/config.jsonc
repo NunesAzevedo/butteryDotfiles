@@ -111,7 +111,7 @@
         // }
     },
     "clock": {
-        "timezone": "America/Sao_Paulo",
+     //   "timezone": "America/Sao_Paulo",
         "tooltip-format": "<big>{:%Y %B}</big>\n <tt><small>{calendar}</small></tt>",
         "format": "{:%H:%M   |   %d/%m}"
         //"format": "{time} | {calendar}",
@@ -186,7 +186,7 @@
         "format-bluetooth": "{volume}% {icon} {format_source}",
         "format-bluetooth-muted": " {icon} {format_source}",
         //"format-muted": " {format_source}",
-        "format-muted": "Shhhh 🤫",
+        "format-muted": "Shhhh Não Grita 🤫 🧏‍♂️",
         "format-source": "{volume}% ",
         "format-source-muted": "",
         "format-icons": {
