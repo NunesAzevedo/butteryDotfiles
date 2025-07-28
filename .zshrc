@@ -117,6 +117,27 @@ source $ZSH/oh-my-zsh.sh
 
 
 # Add personal aliases
-for config_file in ~/.aliases/aliases; do
-  source "$config_file"
-done
+if [[ -f /etc/os-release ]]; then
+    source /etc/os-release
+    case "$ID" in
+        "fedora")
+            source ~/.aliases/aliases_fedora
+            ;;
+        "arch")
+            source ~/.aliases/aliases_archlinux
+            ;;
+        "android")
+            source ~/.aliases/aliases_android
+            ;;
+        *)
+            echo "Distribuição não reconhecida: $ID"
+            ;;
+    esac
+elif [[ -n "$ANDROID_ROOT" ]] || [[ -d /system/bin ]]; then
+    # Fallback para Android (caso não tenha /etc/os-release)
+    source ~/.aliases/aliases_android
+else
+    echo "Arquivo /etc/os-release não encontrado e sistema não identificado"
+fi
+
+
