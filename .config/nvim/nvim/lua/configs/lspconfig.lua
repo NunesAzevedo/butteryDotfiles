@@ -7,6 +7,7 @@ local servers = {
   "rust-analyzer",
   "eslint-lsp",
   "ruff",
+  "ast-grep",
 }
 vim.lsp.enable(servers)
 

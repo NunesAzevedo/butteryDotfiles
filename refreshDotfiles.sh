@@ -17,7 +17,7 @@ cp -r ~/.config/nvim/ ./.config/nvim/
 
 # Tmux
 cp -r ~/.tmux.conf ./tmux.conf
-cp -r ~/.config/tmux-pluguins/
+cp -r ~/.config/tmux-pluguins/ .config/tmux-pluguins
 
 
 
