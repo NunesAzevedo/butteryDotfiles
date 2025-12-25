@@ -1,0 +1,91 @@
+# Escolha do editor padrão do computador
+export EDITOR=nvim
+export VISUAL=nvim
+
+# Atalhos do terminal
+alias u='topgrade -y'
+alias s='sudo'
+alias e='exit'
+alias r='reboot'
+alias c='clear'
+alias ls='lsd'
+alias .='cd ..'
+alias ..='cd -'
+alias mk='mkdir -pv'
+alias ff='fastfetch'
+alias n='nvim'
+alias p='pkg'
+alias pi='pkg install'
+alias t='touch'
+alias co='code . && clear'
+# alias cat='bat'
+alias environment_variables='nvim ~/.environment_variables'
+
+# Aliases relativos à USP
+alias vpn_usp='sh ~/src/scripts/vpn_usp.sh'
+
+# Atalhos para abrir aplicativos (gambiarra temorária)
+alias clion='sh ~/apps/clion/clion-2024.3.1/bin/clion.sh'
+
+# ---------------------------------------
+# Atalhos de personalização do computador
+# ---------------------------------------
+# Atalhos aliases
+alias al='nvim ~/.aliases/aliases_android' # Editar os aliases
+alias alu='source ~/.bashrc && source ~/.zshrc' # Atualizar os terminais
+alias cdal='cd ~/.aliases' # Ir para o diretório desse arquivo
+alias gal='cd ~/.aliases/ && git add . && git commit -m a && git push && cd -' # Atualizar Github com a atualização rapidamente
+alias galupdate='cd ~/.aliases/ && git fetch && git pull && cd -' # Dar git pull nas atualizações do repositório 
+
+alias z='code ~/.zshrc'  # Editar o .zshrc
+alias b='code ~/.bashrc' # Editar o .bashrc
+
+# Atalhos de Git
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gca='git commit -m a'
+alias gfdc='git add . && git commit -m a && git push'
+alias gf='git fetch'
+alias gst='git status'
+alias gpull='git pull'
+alias greb='git rebase'
+alias gb='git branch'
+alias gsw='git switch'
+alias gch='git checkout'
+alias gclone='git clone'
+alias gcnfig='git config'
+alias gClonaTodosOsRepositoriosRemotos='sh ~/.scripts/clonaTodosOsRepositorios.sh'
+
+# Atalhos Makefile
+alias m='make'
+alias ma='make all'
+alias mr='make run'
+alias mc='make clean'
+alias mz='make zip'
+alias md='make debug'
+
+
+# Atalhos typst
+alias ty='typst compile'
+
+#Atalhos Python
+alias p='python3'
+
+
+# Atalhos de desenvolvimento de código no geral
+alias a='./a.out'
+alias gfw='g++ -Wall'
+
+# ------------------
+# Atalhos Oh my posh
+# ------------------
+alias gposh='cd ~/oh_my_posh_themes && git add . && git commit -m a && git push'
+
+# Usar Oh my posh no terminal
+    # Temas
+    craver='~/.oh_my_posh_themes/craver.omp.json'
+
+# Inicia o Oh my posh
+eval "$(oh-my-posh init bash --config $craver)" # For bash
+#eval "$(oh-my-posh init zsh --config $craver)"  # For zsh

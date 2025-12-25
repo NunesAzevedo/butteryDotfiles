@@ -1,0 +1,138 @@
+{
+	"powermode.enabled": true,
+	"explorer.confirmDragAndDrop": false,
+	"github.copilot.enable": {
+		"*": false,
+		"plaintext": false,
+		"markdown": false,
+		"scminput": false,
+		"html": true,
+		"typst": false
+	},
+	"files.autoSaveDelay": 200,
+	"liveServer.settings.donotVerifyTags": true,
+	"liveServer.settings.AdvanceCustomBrowserCmdLine": "",
+	"liveServer.settings.ChromeDebuggingAttachment": false,
+	"fiveServer.browser": [],
+	"C_Cpp.autocompleteAddParentheses": true,
+	"C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+	"liveServer.settings.donotShowInfoMsg": true,
+	"files.associations": {
+		"*.c": "c"
+	},
+	"vscode-pets.petSize": "medium",
+	"files.autoSave": "afterDelay",
+	"editor.fontFamily": "JetBrains Mono",
+	"editor.fontSize": 14,
+	"editor.lineHeight": 1.8,
+	"editor.rulers": [
+		80,
+		120
+	],
+	"workbench.editor.labelFormat": "short",
+	"explorer.sortOrder": "type",
+	"explorer.compactFolders": false,
+	"window.titleBarStyle": "native",
+	"workbench.startupEditor": "none",
+	"editor.renderLineHighlight": "line",
+	// Deixa alguns simbolos mais bonitos (=>, >=, != ...)
+	"editor.fontLigatures": true,
+	// "explorer.fileNesting.enabled": true,
+	"terminal.integrated.fontFamily": "MesloLGL Nerd Font",
+	"terminal.integrated.fontSize": 14,
+	"terminal.integrated.defaultProfile.windows": "PowerShell",
+	"remote.autoForwardPortsSource": "hybrid",
+	"accessibility.hideAccessibleView": true,
+	"google-translate.firstLanguage": "en",
+	"powermode.combo.location": "editor",
+	"workbench.editorAssociations": {
+		"*.docx": "docxreader.docxEditor"
+	},
+	"arduino.path": "/home/manteiguinha/arduino-1.8.19",
+	"latex-workshop.intellisense.biblatexJSON.replace": {},
+	"workbench.iconTheme": "vscode-icons",
+	"latex-workshop.latex.tools": [
+		{
+			"name": "latexmk",
+			"command": "latexmk",
+			"args": [
+				"--shell-escape",
+				"-synctex=1",
+				"-interaction=nonstopmode",
+				"-file-line-error",
+				"-pdf",
+				"-outdir=%OUTDIR%",
+				"%DOC%"
+			],
+			"env": {}
+		},
+		{
+			"name": "pdflatex",
+			"command": "pdflatex",
+			"args": [
+				"--shell-escape",
+				"-synctex=1",
+				"-interaction=nonstopmode",
+				"-file-line-error",
+				"%DOC%"
+			],
+			"env": {}
+		},
+		{
+			"name": "bibtex",
+			"command": "bibtex",
+			"args": [
+				"--shell-escape",
+				"%DOCFILE%"
+			],
+			"env": {}
+		}
+	],
+	"codesnap.realLineNumbers": true,
+	"codesnap.shutterAction": "copy",
+	"cmake.pinnedCommands": [
+		"workbench.action.tasks.configureTaskRunner",
+		"workbench.action.tasks.runTask"
+	],
+	"git.autofetch": true,
+	"makefile.configureOnOpen": true,
+	"hexeditor.columnWidth": 21,
+	"hexeditor.showDecodedText": true,
+	"hexeditor.defaultEndianness": "little",
+	"hexeditor.inspectorType": "aside",
+	"diffEditor.ignoreTrimWhitespace": false,
+	"editor.formatOnSave": true,
+	"[cpp]": {
+		"editor.defaultFormatter": "ms-vscode.cpptools"
+	},
+	"prettier.useTabs": true,
+	"prettier.useEditorConfig": false,
+	"vs-code-prettier-eslint.prettierLast": true,
+	"[c]": {
+		"editor.defaultFormatter": "ms-vscode.cpptools"
+	},
+	"window.menuBarVisibility": "compact",
+	"vsicons.dontShowNewVersionMessage": true,
+	"workbench.editor.defaultBinaryEditor": "hexEditor.hexedit",
+	"workbench.panel.defaultLocation": "right",
+	"security.workspace.trust.untrustedFiles": "open",
+	"livePreview.customExternalBrowser": "Chrome",
+	"[typst]": {
+		"editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?"
+	},
+	"[typst-code]": {
+		"editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?"
+	},
+	"terminal.integrated.inheritEnv": false,
+	"powermode.presets": "exploding-rift",
+	"powermode.combo.counterEnabled": "show",
+	"git.confirmSync": false,
+	"database-client.autoSync": true,
+	"zenMode.hideStatusBar": false,
+	"zenMode.hideLineNumbers": false,
+	"github.copilot.nextEditSuggestions.enabled": true,
+	"workbench.colorTheme": "Gruvbox Dark Hard",
+	"gitlens.ai.model": "vscode",
+	"gitlens.ai.vscode.model": "copilot:gpt-4.1",
+	"window.newWindowProfile": "C / C++"
+}

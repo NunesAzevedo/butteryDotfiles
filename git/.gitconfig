@@ -1,0 +1,41 @@
+[core]
+    # Usa o Neovim como editor padrão para commits
+    editor = nvim
+    # Evita problemas de quebra de linha entre Windows/Linux
+    autocrlf = input
+    # Ignora mudanças de permissão (chmod) em partições NTFS
+    fileMode = false
+
+[init]
+    # O padrão moderno
+    defaultBranch = main
+
+[color]
+    ui = true
+
+[pull]
+    rebase = false
+
+# =================================================================
+# Carrega configs locais 
+# =================================================================
+[include]
+    path = ~/.gitconfig.local
+
+# =================================================================
+# Aliases (Economize dedos)
+# =================================================================
+[alias]
+    s = status
+    c = commit -m
+    ca = commit -am
+    a = add .
+    co = checkout
+    br = branch
+    l = log --oneline --graph --decorate
+    ls = log --stat
+    p = push
+    pl = pull
+    d = diff
+    unstage = reset HEAD --
+    last = log -1 HEAD

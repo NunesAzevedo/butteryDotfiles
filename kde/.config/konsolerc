@@ -1,0 +1,14 @@
+MenuBar=Disabled
+
+[Desktop Entry]
+DefaultProfile=Manteiguinha.profile
+
+[General]
+ConfigVersion=1
+
+[Notification Messages]
+CloseAllEmptyTabs=true
+CloseAllTabs=true
+
+[UiSettings]
+ColorScheme=
