@@ -27,7 +27,7 @@ sudo pacman -S git stow
 1. **Clone the repository** to your Home directory:
 
 ```bash
-git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
+git clone https://github.com/NunesAzevedo/butteryDotfiles.git ~/butteryDotfiles
 cd ~/butteryDotfiles
 
 ```
