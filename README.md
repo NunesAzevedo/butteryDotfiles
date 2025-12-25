@@ -47,28 +47,6 @@ stow hypr
 
 ```
 
----
-
-## ⚠️ Special Configuration: Fonts
-
-Due to directory structure conflicts caused by **PhotoGIMP** (which creates a nested `.local` folder), fonts **must not** be installed via Stow.
-
-**Install fonts manually using the following commands:**
-
-```bash
-# 1. Ensure the target directory exists and is clean
-rm -rf ~/.local/share/fonts
-mkdir -p ~/.local/share/fonts
-
-# 2. Create the direct symbolic link
-ln -s ~/butteryDotfiles/fonts/.local/share/fonts ~/.local/share/fonts
-
-# 3. Update the font cache
-fc-cache -fv
-
-```
-
----
 
 ## 🎨 GIMP (PhotoGIMP)
 
