@@ -1,0 +1,20 @@
+# --- Logs de Instalação ---
+# Ignora os logs gerados pelo install.sh (ex: .install_2025...)
+.install_*.log
+# Ignora qualquer arquivo de log geral
+*.log
+
+# --- Arquivos de Sistema & Temporários ---
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# --- Segredos e Arquivos Privados ---
+# Garante que seus tokens/chaves nunca subam (sugestão anterior)
+.env
+
+# --- Backups ---
+# Caso você gere backups manuais com extensão .bak
+*.bak
+
