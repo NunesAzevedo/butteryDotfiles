@@ -9,6 +9,14 @@ EDITOR="nvim"
 # Java settings
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/
 
+# Alias "Update Dotfiles":
+# 1. Gera as listas de pacotes atualizadas
+# 2. Adiciona tudo ao git
+# 3. Faz commit com mensagem padrão
+# 4. Envia pro GitHub
+alias updot='cd ~/butteryDotfiles/ && ./backup_packages.sh && git add . && git commit -m "Update: Routine maintenance $(date +%F)" && git push'
+
+
 # Atalhos do terminal
 # alias u='sudo pacman -Syu && yay -Syu && flatpak update -y'
 alias u='topgrade -y'

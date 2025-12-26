@@ -58,4 +58,7 @@ for folder in */; do
     fi
 done
 
+echo -e "${YELLOW}--> Atualizando cache de fontes...${NC}"
+fc-cache -fv &> /dev/null
+
 echo -e "${CYAN}🏁 Dotfiles aplicados!${NC}"
