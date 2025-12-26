@@ -87,12 +87,19 @@ fi
 # ==============================================================================
 # Applies timeout and visual settings. Grub must be updated afterwards.
 if apply_config "$BASE_DIR/etc/default/grub" "/etc/default/grub" "GRUB Config"; then
-    echo -e "${YELLOW}    Updating GRUB configuration (this may take a moment)...${NC}"
-    if sudo grub-mkconfig -o /boot/grub/grub.cfg > /dev/null; then
-        echo -e "${GREEN}    GRUB updated successfully.${NC}"
+    
+    if command -v grub-mkconfig &> /dev/null; then
+        echo -e "${YELLOW}    Updating GRUB configuration (this may take a moment)...${NC}"
+        if sudo grub-mkconfig -o /boot/grub/grub.cfg > /dev/null; then
+            echo -e "${GREEN}    GRUB updated successfully.${NC}"
+        else
+            echo -e "${RED}    Failed to update GRUB.${NC}"
+        fi
     else
-        echo -e "${RED}    Failed to update GRUB.${NC}"
+        echo -e "${YELLOW}    ⚠️  'grub-mkconfig' not found. Skipping bootloader update (Expected in Docker/Chroot).${NC}"
     fi
+    # ======================
+    
 fi
 
 # ==============================================================================

@@ -13,6 +13,8 @@ NC='\033[0m'
 
 echo -e "${CYAN}🧈 Iniciando restauração dos pacotes butteryDotfiles...${NC}"
 
+echo -e "${YELLOW}--> Sincronizando repositórios (necessário pois o pacman.conf mudou)...${NC}"
+sudo pacman -Sy --noconfirm
 # ==============================================================================
 # 0. PREPARAÇÃO DE CONFLITOS
 # ==============================================================================
