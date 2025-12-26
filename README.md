@@ -32,7 +32,7 @@ The installation process is fully scripted and idempotent. It handles system pac
 Run the following command in your terminal:
 
 ```bash
-git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
+git clone https://github.com/NunesAzevedo/butteryDotfiles.git ~/butteryDotfiles
 cd ~/butteryDotfiles
 ./install.sh
 
