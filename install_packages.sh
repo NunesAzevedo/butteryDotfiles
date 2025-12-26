@@ -67,11 +67,10 @@ install_list() {
 # ==============================================================================
 # 1. BASE-DEVEL E GIT
 # ==============================================================================
-echo -e "${CYAN}--> Verificando base-devel...${NC}"
-if sudo pacman -S --needed --noconfirm base-devel git &> /dev/null; then
-    echo -e "${GREEN}✅ base-devel ok${NC}"
+if sudo pacman -S --needed --noconfirm base-devel git stow &> /dev/null; then
+    echo -e "${GREEN}✅ Ferramentas básicas (base-devel, git, stow) ok${NC}"
 else
-    echo -e "${RED}❌ Erro crítico ao instalar base-devel.${NC}"
+  echo -e "${RED}❌ Erro crítico ao instalar ferramentas básicas (base-devel, git ou stow).${NC}"
     exit 1
 fi
 
