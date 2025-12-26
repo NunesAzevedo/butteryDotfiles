@@ -147,4 +147,17 @@ if [ -f "$HOME/.local/bin/oh-my-posh" ]; then
     echo -e "${GREEN}✅ Link verificado/criado.${NC}"
 fi
 
+# ==============================================================================
+# 5. DEFINIR ZSH COMO PADRÃO
+# ==============================================================================
+echo -e "${CYAN}--> Definindo Zsh como shell padrão...${NC}"
+
+if [ "$SHELL" != "$(which zsh)" ]; then
+    chsh -s "$(which zsh)"
+    echo -e "${GREEN}✅ Shell padrão alterado para Zsh. Reinicie a sessão para ver a mudança.${NC}"
+else
+    echo -e "${GREEN}✅ Zsh já é o shell padrão.${NC}"
+fi
+
+
 echo -e "${CYAN}🏁 Processo finalizado!${NC}"
