@@ -7,6 +7,6 @@ miniconda3
 nerdfetch
 spamton-shimeji
 speedometer
-topgrade
+topgrade-bin
 visual-studio-code-bin
 yay

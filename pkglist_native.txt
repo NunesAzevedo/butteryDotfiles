@@ -25,6 +25,7 @@ dhcpcd
 dialog
 discord
 dmenu
+docker
 dolphin
 dosfstools
 dunst
