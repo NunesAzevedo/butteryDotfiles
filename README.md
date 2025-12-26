@@ -1,108 +1,152 @@
+
+
 # Buttery Dotfiles 🧈
 
-My personal dotfiles for Arch Linux with Hyprland, Fedora with KDE and Windows 11, in multiboot., managed with **GNU Stow**.
+> My personal, modular configuration files for **Arch Linux (Hyprland)**.
+> Automates the setup of a fully functional environment from a fresh install to a polished desktop.
 
-## 📦 Contents
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white)
+![Hyprland](https://img.shields.io/badge/Hyprland-00A4CC?style=for-the-badge&logo=hyprland&logoColor=white)
+![GNU Stow](https://img.shields.io/badge/GNU_Stow-D02020?style=for-the-badge&logo=gnu&logoColor=white)
 
-This repository contains configurations for:
+## 📦 What's Inside?
 
-* **Window Manager:** Hyprland (including Waybar, nwg-bar, nwg-look)
-* **Terminal:** Kitty and Konsole
-* **Shell:** Zsh (with Oh My Zsh and Oh My Posh)
-* **Editor:** Neovim (NvChad/Custom)
-* **Tools:** Tmux, Git, Yay, Btop, Cava, Ranger, Lazygit
-* **Design:** GTK Themes, Icons, GIMP (PhotoGIMP setup)
+This repository manages configurations for:
+* **Window Manager:** Hyprland (Waybar, nwg-bar, nwg-look)
+* **Shell:** Zsh + Oh My Zsh + Oh My Posh
+* **Terminal:** Kitty
+* **Editor:** Neovim (NvChad base)
+* **Tools:** Tmux, Git, Yay, Btop, Cava, Lazygit
+* **System:** Pacman, Makepkg, GRUB, Keyd (root configs)
 
-## 🚀 Prerequisites
+## 🚀 Installation (One-Command Setup)
 
-Ensure you have `git` and `stow` installed:
+The installation process is fully scripted and idempotent. It handles system packages, root configurations, and user dotfiles automatically.
+
+### Prerequisites
+* A fresh Arch Linux installation.
+* `git` installed (`sudo pacman -S git`).
+* An active internet connection.
+
+### Quick Start
+Run the following command in your terminal:
 
 ```bash
-sudo pacman -S git stow
-
-```
-
-## 🛠️ Installation
-
-1. **Clone the repository** to your Home directory:
-
-```bash
-git clone git@github.com:NunesAzevedo/butteryDotfiles.git ~/butteryDotfiles
+git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
 cd ~/butteryDotfiles
+./install.sh
 
 ```
+(Note: If you prefer SSH, clone using ```git@github.com:NunesAzevedo/butteryDotfiles.git```)
 
-2. **Apply configurations (Stow)**
-For most packages, simply use Stow. This will automatically create symbolic links in `~/.config/` or `~/`.
+---
+
+## 🛠️ Under the Hood
+
+The setup is orchestrated by `install.sh`, which executes three distinct phases:
+
+### 1. System Configuration (Root)
+
+**Script:** `system/install_system.sh`
+
+* Backs up and replaces system-wide configs in `/etc/`.
+* Optimizes **Pacman** (Parallel downloads, colors, multilib).
+* Optimizes **Makepkg** (Uses all CPU cores for compilation).
+* Configures **GRUB** (Boot timeout and visuals).
+* Sets up **Keyd** (Remaps CapsLock to Esc/Ctrl).
+
+### 2. Package Installation
+
+**Script:** `install_packages.sh`
+
+* Installs base tools (`base-devel`, `stow`, `git`).
+* Bootstraps **Yay** (AUR Helper) if missing.
+* Installs official packages from `pkglist_native.txt`.
+* Installs AUR packages from `pkglist_aur.txt`.
+* Sets up Zsh plugins and Oh My Posh themes.
+
+### 3. Dotfiles Linking (Stow)
+
+**Script:** `install_dotfiles.sh`
+
+* Uses **GNU Stow** to symlink configurations from this repo to `~/.config/` and `~/`.
+* Automatically ignores system folders and scripts.
+* Modular structure: `hypr/` maps to `~/.config/hypr/`, `zsh/` maps to `~/`, etc.
+
+---
+
+## 🧪 Testing (Docker)
+
+You can verify the installation scripts safely inside a Docker container before running them on real hardware.
 
 ```bash
-# Example: install everything (except special folders like fonts)
-stow .
+# 1. Create a clean Arch Linux container (Privileged is required for Pacman sandbox)
+sudo docker run -it --rm --privileged --name arch_test archlinux:latest bash
 
-# Or install package by package (recommended for testing)
-stow zsh
-stow nvim
-stow kitty
-stow hypr
+# 2. Inside the container, setup the environment:
+pacman -Sy --noconfirm git base-devel sudo
+useradd -m -G wheel -s /bin/bash tester
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+su - tester
 
-```
-
-
-## 🎨 GIMP (PhotoGIMP)
-
-GIMP configurations have been cleaned to avoid "noise" from temporary files (`sessionrc`, `tool-options`, etc.). The repository tracks only essential settings, shortcuts, and preferences.
-
-When launching GIMP for the first time, it will automatically recreate the necessary cache folders.
-
-## 🔄 Updates
-
-To make local changes and save them to the repository:
-
-```bash
+# 3. Clone and Run
+git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
 cd ~/butteryDotfiles
+./install.sh
+
+```
+
+---
+
+## 🔄 Maintenance
+
+### Keeping the repo updated
+
+When you install new programs or change settings, keep the repository in sync:
+
+1. **Backup Package Lists:**
+```bash
+./backup_packages.sh
+
+```
+
+
+2. **Commit Changes:**
+```bash
 git add .
-git commit -m "update: description of changes"
+git commit -m "feat: updated configs and package lists"
 git push
 
 ```
+Or use the alias ```updot``` in this dotfiles.
 
 
-## 📦 Package Management
 
-To keep track of installed software and restore it on a new machine, I use a script along with package lists generated by `pacman`.
+### Updating Symlinks
 
-### Backup (Generating Lists)
-
-To save your currently installed packages to the repository lists:
+If you add new configuration folders, simply run:
 
 ```bash
-# Save official packages (native)
-pacman -Qqe > pkglist_native.txt
-
-# Save AUR packages
-pacman -Qqm > pkglist_aur.txt
+./install_dotfiles.sh
 
 ```
 
-### Restore (Installing on a new system)
+---
 
-To install all packages (Official + AUR) on a fresh Arch Linux installation:
+## 📂 Structure
 
-1. Ensure you are in the repository root.
-2. Run the install script:
-
-```bash
-chmod +x install_packages.sh
-./install_packages.sh
-
-```
-
-**What the script does:**
-
-* Installs `base-devel` (prerequisite for compiling).
-* Installs `yay` manually if it's missing (bootstrapping).
-* Reads `pkglist_native.txt` and installs packages via `pacman`.
-* Reads `pkglist_aur.txt` and installs packages via `yay`.
+```text
+butteryDotfiles/
+├── install.sh             # Master orchestrator
+├── install_packages.sh    # Package installer
+├── install_dotfiles.sh    # Stow linker
+├── system/                # Root configurations (/etc)
+│   └── install_system.sh  # Root config installer
+├── pkglist_native.txt     # Official packages list
+├── pkglist_aur.txt        # AUR packages list
+├── hypr/                  # Hyprland configs (.config/hypr)
+├── nvim/                  # Neovim configs (.config/nvim)
+└── ...
 
 ```
 
