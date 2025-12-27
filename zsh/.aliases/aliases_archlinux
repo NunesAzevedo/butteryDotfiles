@@ -14,7 +14,7 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/
 # 2. Adiciona tudo ao git
 # 3. Faz commit com mensagem padrão
 # 4. Envia pro GitHub
-alias updot='cd ~/butteryDotfiles/ && ./backup_packages.sh && git add . && git commit -m "Update: Routine maintenance $(date +%F)" && git push'
+alias updot='cd ~/butteryDotfiles/ && ./backup_packages.sh && git add . && git commit -m "Update: Routine maintenance $(date +%F)" && git push && cd -'
 
 
 # Atalhos do terminal
