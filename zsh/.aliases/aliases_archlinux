@@ -43,6 +43,7 @@ alias k='(kitty . &) && disown'
 alias h='$EDITOR ~/.config/hypr/hyprland.conf'
 alias o='okular'
 alias nconfig='cd ~/.config/nvim/ && $EDITOR . && cd -'
+alias lz='lazygit'
 
 # Aliases for studies
 alias x='xournalpp'
