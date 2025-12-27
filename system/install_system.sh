@@ -74,12 +74,25 @@ apply_config "$BASE_DIR/etc/makepkg.conf" "/etc/makepkg.conf" "Makepkg Config"
 # ==============================================================================
 # 2. KEYBOARD REMAPPING (Keyd)
 # ==============================================================================
-# Applies CapsLock remapping. Service needs restart to take effect.
+# Remaps keys (e.g., CapsLock to Esc/Ctrl).
+# FIX: Ensures the service is enabled and started immediately.
+
 if apply_config "$BASE_DIR/etc/keyd/default.conf" "/etc/keyd/default.conf" "Keyd Config"; then
     echo "    Reloading keyd service..."
-    # Try to enable and restart; ignore errors if keyd isn't installed
-    sudo systemctl enable keyd &>/dev/null || true
-    sudo systemctl restart keyd &>/dev/null || true
+
+    # 1. Reload systemd manager configuration (in case keyd was just installed)
+    systemctl daemon-reload &>/dev/null || true
+
+    # 2. Enable service at boot AND start it immediately (--now)
+    # The '|| true' flag prevents the script from failing inside Docker/Chroot
+    if systemctl enable --now keyd &>/dev/null; then
+        echo -e "${GREEN}    Keyd service enabled and started.${NC}"
+    else
+        echo -e "${YELLOW}    Warning: Could not enable Keyd (expected in Docker).${NC}"
+    fi
+
+    # 3. Force reload of the configuration file if the service was already running
+    keyd reload &>/dev/null || true
 fi
 
 # ==============================================================================
