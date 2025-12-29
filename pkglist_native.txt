@@ -41,6 +41,7 @@ figlet
 firefox
 flatpak
 fzf
+gdu
 git
 glances
 glow
