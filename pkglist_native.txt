@@ -30,9 +30,7 @@ dolphin
 dosfstools
 dunst
 efibootmgr
-emacs
 espeak-ng
-eza
 fastfetch
 fd
 feh
@@ -43,7 +41,6 @@ flatpak
 fzf
 gdu
 git
-glances
 glow
 gnome-themes-extra
 go
@@ -56,16 +53,9 @@ gst-plugins-base
 gst-plugins-good
 gst-plugins-ugly
 gtklock
-htop
 hypridle
 hyprland
 hyprlock
-hyprpaper
-i3-wm
-i3blocks
-i3lock
-i3status
-iftop
 inotify-tools
 iotop
 iw
@@ -79,14 +69,12 @@ libreoffice-fresh
 linux
 linux-firmware
 lsd
-lynx
 man-db
 mc
 meson
 mpv
 mtools
 neovim
-nethogs
 network-manager-applet
 networkmanager
 nnn
@@ -100,6 +88,7 @@ obs-studio
 okular
 os-prober
 otf-font-awesome
+pacman-contrib
 pavucontrol
 pipewire-alsa
 pipewire-jack
@@ -119,7 +108,6 @@ speedtest-cli
 steam
 stow
 sudo
-swaylock
 swaync
 swww
 tig

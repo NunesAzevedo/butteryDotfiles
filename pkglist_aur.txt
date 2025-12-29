@@ -1,12 +1,5 @@
 afetch
-apg
-archfetch
-ccze
-hollywood
-miniconda3
 nerdfetch
-spamton-shimeji
-speedometer
 topgrade-bin
 visual-studio-code-bin
 yay
