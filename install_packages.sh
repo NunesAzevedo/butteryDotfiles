@@ -107,8 +107,47 @@ if [ -f pkglist_aur.txt ]; then
     rm /tmp/aur_clean.txt
 fi
 
+
 # ==============================================================================
-# 4. CONFIGURAÇÃO DE SHELL (Oh My Zsh & Oh My Posh)
+# 4. INSTALAÇÃO DE FLATPAKS 
+# ==============================================================================
+
+FLATPAK_LIST="pkglist_flatpak.txt"
+
+# Verifica se o comando flatpak existe (instalado via pacman na etapa anterior) e se a lista existe
+if command -v flatpak &> /dev/null && [ -f "$FLATPAK_LIST" ]; then
+    echo -e "${CYAN}--> Configurando e instalando Flatpaks...${NC}"
+
+    # 1. Adiciona o repositório Flathub (se ainda não existir)
+    echo -e "${YELLOW}    Verificando repositório Flathub...${NC}"
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+    # 2. Lê a lista e prepara para instalação
+    # Grep remove comentários e linhas vazias; tr transforma quebras de linha em espaços
+    APPS_TO_INSTALL=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
+
+    if [ -n "$APPS_TO_INSTALL" ]; then
+        echo -e "${YELLOW}    Instalando aplicativos listados...${NC}"
+        
+        # -y: Assume sim para tudo
+        # --noninteractive: Não faz perguntas
+        if flatpak install -y --noninteractive flathub $APPS_TO_INSTALL; then
+            echo -e "${GREEN}✅ Todos os Flatpaks instalados com sucesso.${NC}"
+        else
+            echo -e "${RED}❌ Houve um erro na instalação dos Flatpaks.${NC}"
+            # Não damos exit 1 aqui para não parar o resto do script (shell setup)
+        fi
+    else
+        echo -e "${YELLOW}    A lista de Flatpaks está vazia.${NC}"
+    fi
+
+elif [ ! -f "$FLATPAK_LIST" ]; then
+    echo -e "${YELLOW}--> Arquivo $FLATPAK_LIST não encontrado. Pulando Flatpaks.${NC}"
+fi
+
+
+# ==============================================================================
+# 5. CONFIGURAÇÃO DE SHELL (Oh My Zsh & Oh My Posh)
 # ==============================================================================
 
 echo -e "${CYAN}--> Configurando Shell e Temas...${NC}"
@@ -148,7 +187,7 @@ if [ -f "$HOME/.local/bin/oh-my-posh" ]; then
 fi
 
 # ==============================================================================
-# 5. DEFINIR ZSH COMO PADRÃO
+# 6. DEFINIR ZSH COMO PADRÃO
 # ==============================================================================
 echo -e "${CYAN}--> Definindo Zsh como shell padrão...${NC}"
 

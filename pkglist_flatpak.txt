@@ -1,0 +1,5 @@
+app.zen_browser.zen
+com.anydesk.Anydesk
+com.stremio.Stremio
+org.eclipse.Java
+org.gimp.GIMP

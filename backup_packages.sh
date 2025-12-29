@@ -63,8 +63,25 @@ fi
 
 check_and_update "pkglist_aur.txt" "$TEMP_AUR" "AUR"
 
+
 # ---------------------------------------------------------
-# 3. Resumo Final
+# 3. Processar Pacotes Flatpak 
+# ---------------------------------------------------------
+if command -v flatpak &> /dev/null; then
+    echo "--> Verificando pacotes Flatpak..."
+    TEMP_FLATPAK="/tmp/pkglist_flatpak.tmp"
+
+    # Lista apenas APPs (ignora runtimes) e pega apenas a coluna do ID
+    flatpak list --app --columns=application > "$TEMP_FLATPAK"
+
+    check_and_update "pkglist_flatpak.txt" "$TEMP_FLATPAK" "Flatpak"
+else
+    echo "⚠️  Flatpak não encontrado. Pulando backup desta etapa."
+fi
+
+
+# ---------------------------------------------------------
+# 4. Resumo Final
 # ---------------------------------------------------------
 echo "---------------------------------------------------"
 if [ $CHANGES_DETECTED -eq 1 ]; then
