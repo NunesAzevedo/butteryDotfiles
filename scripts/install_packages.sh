@@ -36,7 +36,6 @@ install_list() {
         log_error "Batch installation failed. Attempting one-by-one..."
         
         # Fallback loop: Try installing packages individually
-        # FIX: Added "|| [ -n "$pkg" ]" to safely read files without a trailing newline (EOF fix)
         while read -r pkg || [ -n "$pkg" ]; do
             [[ -z "$pkg" || "$pkg" =~ ^# ]] && continue
             
@@ -50,15 +49,17 @@ install_list() {
 # 3. ARCH LINUX INSTALLATION
 # ==============================================================================
 if [ "$DISTRO" == "arch" ]; then
+    log_info "Initializing Arch Keyring..."
+    sudo pacman-key --init
+    sudo pacman-key --populate archlinux
+
     log_info "Syncing Pacman repositories..."
     sudo pacman -Sy --noconfirm
 
-    # FIX: Refresh Arch Keyring to prevent PGP signature errors on fresh ISOs
-    log_info "Refreshing Arch Keyring..."
+    log_info "Refreshing Arch Keyring package..."
     sudo pacman -S --noconfirm archlinux-keyring
 
     log_info "Installing base tools..."
-    # FIX: Added 'curl' (required for Oh My Zsh/Posh) and 'unzip'
     sudo pacman -S --needed --noconfirm base-devel git stow unzip curl
 
     if ! command -v yay &> /dev/null; then
@@ -71,14 +72,11 @@ if [ "$DISTRO" == "arch" ]; then
 
     if [ -f "$SOURCE_DIR/pkglist_native.txt" ]; then
         log_info "Installing Native Arch packages..."
-        # FIX: Clean comments and empty lines before feeding to pacman
-        # Using pipe (|) ensures comments don't break the command
         grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_native.txt" | sudo pacman -S --needed --noconfirm -
     fi
 
     if [ -f "$SOURCE_DIR/pkglist_aur.txt" ]; then
         log_info "Installing AUR packages..."
-        # FIX: Filter out comments AND 'yay' to avoid conflict/errors
         grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_aur.txt" | grep -vE '^yay$' > /tmp/aur_clean.txt
         
         # Check if file is not empty before running yay
@@ -94,7 +92,6 @@ if [ "$DISTRO" == "arch" ]; then
 elif [ "$DISTRO" == "fedora" ]; then
     log_info "Configuring DNF..."
 
-    # FIX: Added 'curl' (required for Oh My Zsh/Posh) and 'unzip'
     sudo dnf install -y git stow util-linux-user unzip curl
 
     if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
@@ -104,7 +101,6 @@ elif [ "$DISTRO" == "fedora" ]; then
     COPR_REPO_LIST="$SOURCE_DIR/repolist_copr.txt"
     if [ -f "$COPR_REPO_LIST" ]; then
         log_info "Enabling COPR repositories..."
-        # FIX: Added EOF handling for repo list too
         while read -r repo || [ -n "$repo" ]; do
             [[ -z "$repo" || "$repo" =~ ^# ]] && continue
             sudo dnf copr enable -y "$repo"
@@ -116,18 +112,29 @@ elif [ "$DISTRO" == "fedora" ]; then
 fi
 
 # ==============================================================================
-# 5. FLATPAK INSTALLATION
+# 5. FLATPAK INSTALLATION (CORREÇÃO DA APOSTA)
 # ==============================================================================
 FLATPAK_LIST="$SOURCE_DIR/pkglist_flatpak.txt"
 
 if command -v flatpak &> /dev/null && [ -f "$FLATPAK_LIST" ]; then
     log_info "Configuring Flatpaks..."
-    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     
-    # Process flatpak list safely
-    APPS=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
-    if [ -n "$APPS" ]; then
-        flatpak install -y --noninteractive flathub $APPS
+    # 1. TENTA adicionar o repositório.
+    # O 'if' captura o código de saída. Se falhar, vai direto para o 'else'.
+    if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
+        
+        # 2. Só entra aqui se o remote-add funcionou.
+        APPS=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
+        
+        if [ -n "$APPS" ]; then
+            log_info "Installing Flatpak applications..."
+            # 3. Mesmo aqui dentro, usamos '|| log_warn' para que um erro de pacote não mate o script.
+            flatpak install -y --noninteractive flathub $APPS || log_warn "Flatpak install encountered issues, continuing..."
+        fi
+    else
+        # 4. Se o remote-add falhou, avisamos e PULAMOS a instalação.
+        # Isso garante que o script continue para a seção 6 (Shell).
+        log_warn "Failed to add Flathub remote. Skipping Flatpak installation."
     fi
 fi
 
@@ -137,8 +144,9 @@ fi
 log_info "Configuring Shell Environment..."
 
 # 6.1 Oh My Zsh
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
+if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
     log_info "Installing Oh My Zsh..."
+    rm -rf "$HOME/.oh-my-zsh"
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     if [ -f "$HOME/.zshrc" ]; then rm "$HOME/.zshrc"; fi
 else
@@ -146,7 +154,6 @@ else
 fi
 
 # 6.2 Oh My Posh
-# CRITICAL FIX: Ensure local bin directory exists regardless of installation state
 mkdir -p "$HOME/.local/bin"
 
 if ! command -v oh-my-posh &> /dev/null; then
