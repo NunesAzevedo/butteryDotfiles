@@ -1,0 +1,18 @@
+# Arquivos e pastas do sistema do repositório
+.git
+.github
+.gitignore
+.dotfilesignore
+.install_*.log
+
+# Scripts e Documentação
+install.sh
+README.md
+LICENSE
+
+# Pastas de Infraestrutura (Não são configs de usuário)
+scripts
+os
+assets
+lib
+docker

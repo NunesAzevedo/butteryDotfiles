@@ -3,27 +3,21 @@
 # SCRIPT: install_packages.sh
 # LOCATION: scripts/install_packages.sh
 # DESCRIPTION: Installs system packages, flatpaks, and shell environments.
-#              Supports Arch Linux (Pacman/AUR) and Fedora (DNF/COPR).
 # ==============================================================================
 
 set -e
 
-# 1. Import Shared Library
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$CURRENT_DIR/lib/utils.sh"
 
-# 2. Setup & Detection
 detect_distro
 SOURCE_DIR="$REPO_ROOT/os/$DISTRO"
 
-# BRANDING: Use Yellow Header
 log_header "Starting Package Restoration for: $DISTRO"
-log_info "📂 Source Directory: $SOURCE_DIR"
 
 # ==============================================================================
 # HELPER: Install List
 # ==============================================================================
-# Generic function to install packages from a file using a given command.
 install_list() {
     local list_file="$1"
     local install_cmd="$2"
@@ -35,22 +29,19 @@ install_list() {
     fi
 
     log_info "Installing $label packages..."
-
-    # Attempt batch installation first (faster)
+    # Reads the file, ignores comments (#) and empty lines, replaces newlines with spaces
     if $install_cmd -y $(grep -vE "^\s*#|^\s*$" "$list_file" | tr '\n' ' '); then
         log_success "All $label packages installed successfully."
     else
         log_error "Batch installation failed. Attempting one-by-one..."
-        while read -r pkg; do
+        
+        # Fallback loop: Try installing packages individually
+        # FIX: Added "|| [ -n "$pkg" ]" to safely read files without a trailing newline (EOF fix)
+        while read -r pkg || [ -n "$pkg" ]; do
             [[ -z "$pkg" || "$pkg" =~ ^# ]] && continue
-            echo -n "Installing $pkg... "
-            if $install_cmd -y "$pkg" &> /dev/null; then
-                echo -e "${GREEN}OK${NC}"
-            else
-                echo -e "${RED}FAIL${NC}"
-                # Retry visibly for debugging
-                $install_cmd -y "$pkg" || true
-            fi
+            
+            # Log specific errors to the summary report instead of ignoring them
+            $install_cmd -y "$pkg" || log_error "Failed to install package: $pkg"
         done < "$list_file"
     fi
 }
@@ -62,11 +53,14 @@ if [ "$DISTRO" == "arch" ]; then
     log_info "Syncing Pacman repositories..."
     sudo pacman -Sy --noconfirm
 
-    # 3.1 Base Tools
-    log_info "Installing base tools (git, base-devel, stow)..."
-    sudo pacman -S --needed --noconfirm base-devel git stow
+    # FIX: Refresh Arch Keyring to prevent PGP signature errors on fresh ISOs
+    log_info "Refreshing Arch Keyring..."
+    sudo pacman -S --noconfirm archlinux-keyring
 
-    # 3.2 Yay (AUR Helper) Bootstrap
+    log_info "Installing base tools..."
+    # FIX: Added 'curl' (required for Oh My Zsh/Posh) and 'unzip'
+    sudo pacman -S --needed --noconfirm base-devel git stow unzip curl
+
     if ! command -v yay &> /dev/null; then
         log_warn "Yay not found. Bootstrapping..."
         git clone https://aur.archlinux.org/yay.git /tmp/yay
@@ -75,20 +69,23 @@ if [ "$DISTRO" == "arch" ]; then
         log_success "Yay installed."
     fi
 
-    # 3.3 Native Packages
-    # Note: Pacman syntax differs slightly, so we inline the command here
     if [ -f "$SOURCE_DIR/pkglist_native.txt" ]; then
         log_info "Installing Native Arch packages..."
-        sudo pacman -S --needed --noconfirm - < "$SOURCE_DIR/pkglist_native.txt"
+        # FIX: Clean comments and empty lines before feeding to pacman
+        # Using pipe (|) ensures comments don't break the command
+        grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_native.txt" | sudo pacman -S --needed --noconfirm -
     fi
 
-    # 3.4 AUR Packages
     if [ -f "$SOURCE_DIR/pkglist_aur.txt" ]; then
         log_info "Installing AUR packages..."
-        # Filter out 'yay' if present to avoid conflicts
-        grep -vE '^yay$' "$SOURCE_DIR/pkglist_aur.txt" > /tmp/aur_clean.txt
-        yay -S --needed --noconfirm - < /tmp/aur_clean.txt
-        rm /tmp/aur_clean.txt
+        # FIX: Filter out comments AND 'yay' to avoid conflict/errors
+        grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_aur.txt" | grep -vE '^yay$' > /tmp/aur_clean.txt
+        
+        # Check if file is not empty before running yay
+        if [ -s "/tmp/aur_clean.txt" ]; then
+            yay -S --needed --noconfirm - < /tmp/aur_clean.txt
+        fi
+        rm -f /tmp/aur_clean.txt
     fi
 
 # ==============================================================================
@@ -97,31 +94,24 @@ if [ "$DISTRO" == "arch" ]; then
 elif [ "$DISTRO" == "fedora" ]; then
     log_info "Configuring DNF..."
 
-    # 4.1 Base Tools
-    # 'util-linux-user' provides chsh, which is needed later.
-    sudo dnf install -y git stow util-linux-user
+    # FIX: Added 'curl' (required for Oh My Zsh/Posh) and 'unzip'
+    sudo dnf install -y git stow util-linux-user unzip curl
 
-    # 4.2 DNF Optimization (Parallel Downloads)
     if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
         echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
     fi
 
-    # 4.3 Enable COPR Repositories
-    # Reads repolist_copr.txt and enables them one by one
     COPR_REPO_LIST="$SOURCE_DIR/repolist_copr.txt"
     if [ -f "$COPR_REPO_LIST" ]; then
         log_info "Enabling COPR repositories..."
-        while read -r repo; do
+        # FIX: Added EOF handling for repo list too
+        while read -r repo || [ -n "$repo" ]; do
             [[ -z "$repo" || "$repo" =~ ^# ]] && continue
-            log_info "Enabling $repo..."
             sudo dnf copr enable -y "$repo"
         done < "$COPR_REPO_LIST"
     fi
 
-    # 4.4 Install Native Packages (Official Repos)
     install_list "$SOURCE_DIR/pkglist_dnf.txt" "sudo dnf install" "Fedora Native"
-
-    # 4.5 Install COPR Packages
     install_list "$SOURCE_DIR/pkglist_copr.txt" "sudo dnf install" "Fedora COPR"
 fi
 
@@ -132,21 +122,13 @@ FLATPAK_LIST="$SOURCE_DIR/pkglist_flatpak.txt"
 
 if command -v flatpak &> /dev/null && [ -f "$FLATPAK_LIST" ]; then
     log_info "Configuring Flatpaks..."
-    
-    # Enable Flathub
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-    # Read list and install
+    
+    # Process flatpak list safely
     APPS=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
     if [ -n "$APPS" ]; then
-        log_info "Installing Flatpak applications..."
-        # --noninteractive ensures no prompts block the script
         flatpak install -y --noninteractive flathub $APPS
-    else
-        log_warn "Flatpak list is empty."
     fi
-elif [ ! -f "$FLATPAK_LIST" ]; then
-    log_warn "Flatpak list not found at $FLATPAK_LIST."
 fi
 
 # ==============================================================================
@@ -158,11 +140,7 @@ log_info "Configuring Shell Environment..."
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     log_info "Installing Oh My Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    
-    # Remove default .zshrc so Stow can link ours later
-    if [ -f "$HOME/.zshrc" ]; then
-        rm "$HOME/.zshrc"
-    fi
+    if [ -f "$HOME/.zshrc" ]; then rm "$HOME/.zshrc"; fi
 else
     log_success "Oh My Zsh is already installed."
 fi
@@ -170,20 +148,42 @@ fi
 # 6.2 Oh My Posh
 if ! command -v oh-my-posh &> /dev/null; then
     log_info "Installing Oh My Posh..."
-    curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
+    mkdir -p "$HOME/.local/bin"
+    curl -fsSL https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
 else
     log_success "Oh My Posh is already installed."
 fi
 
-# Ensure OMP is in path (symlink if needed)
+# Ensure OMP is in path
 if [ -f "$HOME/.local/bin/oh-my-posh" ] && [ ! -f "/usr/bin/oh-my-posh" ]; then
     sudo ln -sf "$HOME/.local/bin/oh-my-posh" /usr/bin/oh-my-posh
+fi
+
+# 6.4 Zsh Plugins (Auto-Install commonly used plugins)
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+install_zsh_plugin() {
+    local repo_url="$1"
+    local plugin_name="$2"
+    local target_dir="$ZSH_CUSTOM/plugins/$plugin_name"
+
+    if [ ! -d "$target_dir" ]; then
+        log_info "Cloning Zsh plugin: $plugin_name..."
+        git clone "$repo_url" "$target_dir" --depth 1 || log_error "Failed to clone $plugin_name"
+    else
+        log_success "Plugin $plugin_name already exists."
+    fi
+}
+
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    install_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
+    install_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
 fi
 
 # 6.3 Set Default Shell
 if [ "$SHELL" != "$(which zsh)" ]; then
     log_info "Changing default shell to Zsh..."
-    chsh -s "$(which zsh)"
+    sudo chsh -s "$(which zsh)" "$USER" || true
 fi
 
 log_success "Package installation complete!"

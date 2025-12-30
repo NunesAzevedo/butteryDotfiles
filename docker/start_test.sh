@@ -8,15 +8,13 @@
 set -e
 
 # 1. Navigation & Checks
-#    Ensure we are running from the repo root
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# Import Utils for colors (optional, but consistent)
+# Import Utils for colors
 if [ -f "scripts/lib/utils.sh" ]; then
     source "scripts/lib/utils.sh"
 else
-    # Fallback definition if utils not found
     YELLOW='\033[1;33m'
     GREEN='\033[0;32m'
     RED='\033[0;31m'
@@ -38,11 +36,13 @@ DOCKERFILE="docker/Dockerfile.$TARGET"
 IMAGE_NAME="buttery_${TARGET}_test"
 CONTAINER_HOME="/home/tester/butteryDotfiles"
 
-# 3. Build Image
+# 3. Build Image (MODERN BUILDKIT ENABLED)
 log_header "Building Docker Image for: $TARGET"
-log_info "Using $DOCKERFILE..."
+log_info "Using $DOCKERFILE with BuildKit..."
 
-docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
+# FIX: We add 'DOCKER_BUILDKIT=1' to force the modern builder.
+# This removes the warning and speeds up the build.
+DOCKER_BUILDKIT=1 docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
 
 # 4. Run Container
 log_header "Starting Container..."
@@ -50,12 +50,6 @@ log_info "Mounting current directory to: $CONTAINER_HOME"
 log_info "Entering interactive shell..."
 echo ""
 
-# EXPLANATION OF FLAGS:
-# -it: Interactive terminal
-# --rm: Remove container after exit (keep things clean)
-# --privileged: Needed for some package manager operations (pacman keys/chroot)
-# -v: Syncs your actual code with the container (live edits!)
-# -w: Sets the working directory inside
 docker run -it --rm --privileged \
     -v "$REPO_ROOT:$CONTAINER_HOME" \
     -w "$CONTAINER_HOME" \

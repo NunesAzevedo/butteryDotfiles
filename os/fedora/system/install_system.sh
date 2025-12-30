@@ -1,105 +1,93 @@
 #!/bin/bash
 # ==============================================================================
-# SCRIPT: install_system.sh
+# SCRIPT: install_system.sh (Fedora)
 # LOCATION: os/fedora/system/install_system.sh
-# DESCRIPTION: Applies system-level configurations for Fedora Linux.
-#              Orchestrates specific configs (Fedora) and shared configs (Common).
+# DESCRIPTION: Applies system-wide configurations for Fedora.
+#              - Keyd (Input Remapping) - Shared
+#              - DNF Configuration (Parallel downloads, fast mirrors)
+#              - GRUB Configuration (Theming, timeouts)
 # ==============================================================================
 
 set -e
 
-# 1. Import Shared Library
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_PATH="$CURRENT_DIR/../../../scripts/lib/utils.sh"
 
-if [ -f "$LIB_PATH" ]; then
-    source "$LIB_PATH"
+# 1. Import Shared Library
+#    Adjust relative path to reach scripts/lib/utils.sh
+UTILS_PATH="$CURRENT_DIR/../../../scripts/lib/utils.sh"
+
+if [ -f "$UTILS_PATH" ]; then
+    source "$UTILS_PATH"
 else
-    echo "❌ Error: Could not find utils.sh at $LIB_PATH"
+    echo -e "\033[0;31m❌ Error: utils.sh not found at $UTILS_PATH\033[0m"
     exit 1
 fi
 
-# BRANDING: Use Yellow Header
-log_header "Applying System Configurations for Fedora Linux..."
-log_warn "Root permissions are required for these operations."
+SOURCE_DIR="$CURRENT_DIR"
+# Define path to Common configurations based on tree structure
+COMMON_SYS_DIR="$CURRENT_DIR/../../../os/common/system"
 
-# 2. Define Source Directories
-FEDORA_SYS_DIR="$REPO_ROOT/os/fedora/system"
-COMMON_SYS_DIR="$REPO_ROOT/os/common/system"
-
-# ==============================================================================
-# HELPER: apply_config
-# ==============================================================================
-apply_config() {
-    local source_file="$1"
-    local dest_file="$2"
-    local label="$3"
-
-    if [ -f "$source_file" ]; then
-        log_info "Configuring $label..."
-
-        # Backup logic
-        if [ -f "$dest_file" ] && [ ! -f "$dest_file.bak" ]; then
-            echo "    -> Creating backup at $dest_file.bak"
-            sudo cp "$dest_file" "$dest_file.bak"
-        fi
-
-        # Copy logic
-        sudo mkdir -p "$(dirname "$dest_file")"
-        if sudo cp "$source_file" "$dest_file"; then
-            log_success "    $label updated."
-            return 0
-        else
-            log_error "    Failed to copy $label."
-            return 1
-        fi
-    else
-        log_warn "Source file not found: $source_file. Skipping $label."
-        return 1
-    fi
-}
+log_header "Configuring Fedora System..."
 
 # ==============================================================================
 # 1. COMMON CONFIGURATIONS (Shared)
 # ==============================================================================
-log_info "--- Applying Shared Configurations ---"
+# Integrating the common keyd config
+KEYD_CONF_SRC="$COMMON_SYS_DIR/etc/keyd/default.conf"
+KEYD_CONF_DEST="/etc/keyd/default.conf"
 
-# 1.1 Keyd (Keyboard Remapping)
-if apply_config "$COMMON_SYS_DIR/etc/keyd/default.conf" "/etc/keyd/default.conf" "Keyd Config"; then
-    log_info "    Reloading keyd service..."
+if [ -f "$KEYD_CONF_SRC" ]; then
+    CHANGES_DETECTED=0 # Reset state
+    check_and_update "$KEYD_CONF_DEST" "$KEYD_CONF_SRC" "Keyd Config"
     
-    systemctl daemon-reload &>/dev/null || true
-    if systemctl enable --now keyd &>/dev/null; then
-        log_success "    Keyd service enabled and started."
-    else
-        log_warn "    Warning: Could not enable Keyd (systemd not found?)"
+    # Reload keyd if changed or not active
+    if [ "$CHANGES_DETECTED" -eq 1 ] || ! systemctl is-active --quiet keyd; then
+        log_info "    Reloading keyd service..."
+        sudo systemctl enable --now keyd &>/dev/null || true
+        sudo keyd reload &>/dev/null || true
     fi
-    keyd reload &>/dev/null || true
 fi
 
 # ==============================================================================
-# 2. FEDORA SPECIFIC CONFIGURATIONS
+# 2. DNF CONFIGURATION
 # ==============================================================================
-log_info "--- Applying Fedora Specific Configurations ---"
+DNF_CONF_SRC="$SOURCE_DIR/dnf.conf"
+DNF_CONF_DEST="/etc/dnf/dnf.conf"
 
-# 2.1 DNF Configuration
-apply_config "$FEDORA_SYS_DIR/etc/dnf/dnf.conf" "/etc/dnf/dnf.conf" "DNF Config"
-
-# 2.2 Bootloader (GRUB)
-#     Updates defaults and regenerates the config using grub2-mkconfig (Fedora standard)
-if apply_config "$FEDORA_SYS_DIR/etc/default/grub" "/etc/default/grub" "GRUB Config"; then
+if [ -f "$DNF_CONF_SRC" ]; then
+    # Reset flag to ensure isolation (prevents false positives from previous steps)
+    CHANGES_DETECTED=0
     
-    if command -v grub2-mkconfig &> /dev/null; then
-        log_info "    Updating GRUB configuration..."
-        # On modern Fedora, this output path handles both BIOS and UEFI correctly.
-        if sudo grub2-mkconfig -o /boot/grub2/grub.cfg > /dev/null; then
-            log_success "    GRUB updated successfully."
+    # check_and_update handles backups, sudo, and copy automatically
+    check_and_update "$DNF_CONF_DEST" "$DNF_CONF_SRC" "DNF Config"
+else
+    log_warn "dnf.conf not found in repository ($DNF_CONF_SRC). Skipping."
+fi
+
+# ==============================================================================
+# 3. GRUB CONFIGURATION
+# ==============================================================================
+GRUB_CONF_SRC="$SOURCE_DIR/grub"
+GRUB_CONF_DEST="/etc/default/grub"
+
+if [ -f "$GRUB_CONF_SRC" ]; then
+    # FIX: Reset flag so DNF changes don't trigger GRUB regeneration falsely
+    CHANGES_DETECTED=0
+    
+    check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"
+
+    # Only regenerate GRUB if changes were made specifically to the GRUB file
+    if [ "$CHANGES_DETECTED" -eq 1 ]; then
+        if command -v grub2-mkconfig &> /dev/null; then
+            log_info "Regenerating GRUB bootloader config..."
+            # Capture failure in the error report (|| log_error)
+            sudo grub2-mkconfig -o /boot/grub2/grub.cfg || log_error "Failed to regenerate GRUB config."
         else
-            log_error "    Failed to update GRUB."
+            log_warn "grub2-mkconfig command not found. Skipping bootloader update."
         fi
-    else
-        log_warn "    'grub2-mkconfig' not found. Skipping update."
     fi
+else
+    log_warn "GRUB config file not found in repository ($GRUB_CONF_SRC). Skipping."
 fi
 
-log_success "System configurations applied successfully!"
+log_success "Fedora system configuration finished."

@@ -28,7 +28,10 @@ log_info "Scanning repository for shell scripts..."
 
 count=0
 while IFS= read -r file; do
-    chmod +x "$file"
+    # FIX: Add '|| true' to suppress errors in environments (like Docker bind-mounts)
+    # where the user might not own the file to change its permissions.
+    chmod +x "$file" || true
+    
     # Optional: Print only if not already executable, or just print all.
     # Here we print relative path for cleaner output.
     echo -e "   ${GREEN}Fixed:${NC} ./${file#./}"

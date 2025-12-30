@@ -1,0 +1,4 @@
+# Force unix-style line endings for all scripts
+*.sh text eol=lf
+*.conf text eol=lf
+install.sh text eol=lf

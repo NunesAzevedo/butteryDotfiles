@@ -1,113 +1,89 @@
 #!/bin/bash
 # ==============================================================================
-# SCRIPT: install_system.sh
+# SCRIPT: install_system.sh (Arch Linux)
 # LOCATION: os/arch/system/install_system.sh
-# DESCRIPTION: Applies system-level configurations for Arch Linux.
-#              Orchestrates specific configs (Arch) and shared configs (Common).
+# DESCRIPTION: Applies system-wide configurations for Arch Linux.
+#              - Keyd (Input Remapping) - Shared
+#              - Pacman Configuration (Parallel downloads, colors)
+#              - GRUB Configuration (Theming, timeouts)
 # ==============================================================================
 
 set -e
 
-# 1. Import Shared Library
-#    Locates the library relative to this script.
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_PATH="$CURRENT_DIR/../../../scripts/lib/utils.sh"
 
-if [ -f "$LIB_PATH" ]; then
-    source "$LIB_PATH"
+# 1. Import Shared Library
+UTILS_PATH="$CURRENT_DIR/../../../scripts/lib/utils.sh"
+
+if [ -f "$UTILS_PATH" ]; then
+    source "$UTILS_PATH"
 else
-    echo "❌ Error: Could not find utils.sh at $LIB_PATH"
+    echo -e "\033[0;31m❌ Error: utils.sh not found at $UTILS_PATH\033[0m"
     exit 1
 fi
 
-# BRANDING: Use Yellow Header
-log_header "Applying System Configurations for Arch Linux..."
-log_warn "Root permissions are required for these operations."
+SOURCE_DIR="$CURRENT_DIR"
+# Define path to Common configurations based on tree structure
+COMMON_SYS_DIR="$CURRENT_DIR/../../../os/common/system"
 
-# 2. Define Source Directories
-#    Using REPO_ROOT from utils.sh makes paths absolute and safe.
-ARCH_SYS_DIR="$REPO_ROOT/os/arch/system"
-COMMON_SYS_DIR="$REPO_ROOT/os/common/system"
-
-# ==============================================================================
-# HELPER: apply_config
-# ==============================================================================
-apply_config() {
-    local source_file="$1"
-    local dest_file="$2"
-    local label="$3"
-
-    if [ -f "$source_file" ]; then
-        log_info "Configuring $label..."
-
-        # Backup logic
-        if [ -f "$dest_file" ] && [ ! -f "$dest_file.bak" ]; then
-            echo "    -> Creating backup at $dest_file.bak"
-            sudo cp "$dest_file" "$dest_file.bak"
-        fi
-
-        # Copy logic
-        sudo mkdir -p "$(dirname "$dest_file")"
-        if sudo cp "$source_file" "$dest_file"; then
-            log_success "    $label updated."
-            return 0
-        else
-            log_error "    Failed to copy $label."
-            return 1
-        fi
-    else
-        log_warn "Source file not found: $source_file. Skipping $label."
-        return 1
-    fi
-}
+log_header "Configuring Arch Linux System..."
 
 # ==============================================================================
 # 1. COMMON CONFIGURATIONS (Shared)
 # ==============================================================================
-log_info "--- Applying Shared Configurations ---"
+# Integrating the 'ghost file' found in tree.txt
+KEYD_CONF_SRC="$COMMON_SYS_DIR/etc/keyd/default.conf"
+KEYD_CONF_DEST="/etc/keyd/default.conf"
 
-# 1.1 Keyd (Keyboard Remapping)
-#     Loaded from os/common/system/etc/keyd/default.conf
-if apply_config "$COMMON_SYS_DIR/etc/keyd/default.conf" "/etc/keyd/default.conf" "Keyd Config"; then
-    log_info "    Reloading keyd service..."
+if [ -f "$KEYD_CONF_SRC" ]; then
+    CHANGES_DETECTED=0 # Reset state
+    check_and_update "$KEYD_CONF_DEST" "$KEYD_CONF_SRC" "Keyd Config"
     
-    systemctl daemon-reload &>/dev/null || true
-    if systemctl enable --now keyd &>/dev/null; then
-        log_success "    Keyd service enabled and started."
-    else
-        log_warn "    Warning: Could not enable Keyd (systemd not found?)"
+    # Reload keyd if changed
+    if [ "$CHANGES_DETECTED" -eq 1 ] || ! systemctl is-active --quiet keyd; then
+        log_info "    Reloading keyd service..."
+        # Try to enable/reload, harmless fail if keyd isn't installed
+        sudo systemctl enable --now keyd &>/dev/null || true
+        sudo keyd reload &>/dev/null || true
     fi
-    keyd reload &>/dev/null || true
 fi
 
 # ==============================================================================
-# 2. ARCH SPECIFIC CONFIGURATIONS
+# 2. PACMAN CONFIGURATION
 # ==============================================================================
-log_info "--- Applying Arch Specific Configurations ---"
+PACMAN_CONF_SRC="$SOURCE_DIR/pacman.conf"
+PACMAN_CONF_DEST="/etc/pacman.conf"
 
-# 2.1 Package Management
-apply_config "$ARCH_SYS_DIR/etc/pacman.conf" "/etc/pacman.conf" "Pacman Config"
-apply_config "$ARCH_SYS_DIR/etc/makepkg.conf" "/etc/makepkg.conf" "Makepkg Config"
+if [ -f "$PACMAN_CONF_SRC" ]; then
+    CHANGES_DETECTED=0 # Reset state
+    check_and_update "$PACMAN_CONF_DEST" "$PACMAN_CONF_SRC" "Pacman Config"
+else
+    log_warn "pacman.conf not found in repository ($PACMAN_CONF_SRC). Skipping."
+fi
 
-# 2.2 Bootloader (GRUB)
-if apply_config "$ARCH_SYS_DIR/etc/default/grub" "/etc/default/grub" "GRUB Config"; then
-    
-    if command -v grub-mkconfig &> /dev/null; then
-        log_info "    Updating GRUB configuration..."
-        if sudo grub-mkconfig -o /boot/grub/grub.cfg > /dev/null; then
-            log_success "    GRUB updated successfully."
+# ==============================================================================
+# 3. GRUB CONFIGURATION
+# ==============================================================================
+GRUB_CONF_SRC="$SOURCE_DIR/grub"
+GRUB_CONF_DEST="/etc/default/grub"
+
+if [ -f "$GRUB_CONF_SRC" ]; then
+    # CRITICAL FIX: Reset flag so previous changes don't trigger GRUB regeneration
+    CHANGES_DETECTED=0
+
+    check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"
+
+    # Only regenerate GRUB if changes were made specifically to the GRUB file
+    if [ "$CHANGES_DETECTED" -eq 1 ]; then
+        if command -v grub-mkconfig &> /dev/null; then
+            log_info "Regenerating GRUB bootloader config..."
+            sudo grub-mkconfig -o /boot/grub/grub.cfg || log_error "Failed to regenerate GRUB config."
         else
-            log_error "    Failed to update GRUB."
+            log_warn "grub-mkconfig command not found. Skipping bootloader update."
         fi
-    else
-        log_warn "    'grub-mkconfig' not found. Skipping update."
     fi
+else
+    log_warn "GRUB config file not found in repository ($GRUB_CONF_SRC). Skipping."
 fi
 
-# 2.3 Mkinitcpio (Optional - Commented out)
-# if apply_config "$ARCH_SYS_DIR/etc/mkinitcpio.conf" "/etc/mkinitcpio.conf" "Mkinitcpio"; then
-#     log_info "    Regenerating initramfs..."
-#     sudo mkinitcpio -P
-# fi
-
-log_success "System configurations applied successfully!"
+log_success "Arch system configuration finished."
