@@ -41,9 +41,12 @@ echo ""
     # 1. Initialization
     detect_distro # Sets $DISTRO global variable
 
-    log_info "Granting execution permissions to scripts..."
-    chmod +x scripts/*.sh
-    chmod +x os/*/system/*.sh 2>/dev/null || true
+    # SELF-HEALING: Ensure all scripts are executable before proceeding.
+    # We run this via 'bash' explicitly in case setup_permissions.sh itself
+    # lost its +x permission during download/unzip.
+    echo ""
+    log_info "Ensuring execution permissions for all scripts..."
+    bash ./scripts/setup_permissions.sh
 
     # 2. System Configuration (Root Level)
     #    Resolves the script path dynamically based on the detected distro.

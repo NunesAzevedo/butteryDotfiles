@@ -1,0 +1,6 @@
+com.discordapp.Discord
+com.valvesoftware.Steam
+io.github.TheThirdOne.rars
+me.iepure.devtoolbox
+org.geogebra.GeoGebra
+org.gimp.GIMP

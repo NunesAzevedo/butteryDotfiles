@@ -1,0 +1,5 @@
+alternateved/keyd
+atim/lazygit
+claaj/typst
+lilay/topgrade
+phracek/PyCharm

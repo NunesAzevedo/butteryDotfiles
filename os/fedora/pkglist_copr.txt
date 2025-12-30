@@ -1,0 +1,4 @@
+keyd
+lazygit
+topgrade
+typst
