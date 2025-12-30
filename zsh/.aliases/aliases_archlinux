@@ -60,7 +60,8 @@ alias clion='sh ~/apps/clion/clion-2024.3.1/bin/clion.sh'
 # ---------------------------------------
 # Atalhos aliases
 alias al='$EDITOR ~/.aliases/aliases_archlinux' # Editar os aliases
-alias alu='source ~/.bashrc && source ~/.zshrc' # Atualizar os terminais
+alias alu='source ~/.zshrc' # Atualizar os terminais (zsh)
+# alias alu='source ~/.bashrc' # Atualizar os terminais (bash)
 alias cdal='cd ~/.aliases' # Ir para o diretório desse arquivo
 alias gal='cd ~/.aliases/ && git add . && git commit -m a && git push && cd -' # Atualizar Github com a atualização rapidamente
 alias galupdate='cd ~/.aliases/ && git fetch && git pull && cd -' # Dar git pull nas atualizações do repositório 
