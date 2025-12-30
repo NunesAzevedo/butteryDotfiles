@@ -151,5 +151,5 @@ alias gposh='cd ~/.oh_my_posh_themes && git add . && git commit -m a && git push
 
 # Inicia o Oh my posh
 # eval "$(oh-my-posh init bash --config $craver)" # For bash
-# eval "$(oh-my-posh init zsh --config $craver)"  # For zsh
+eval "$(oh-my-posh init zsh --config $craver)"  # For zsh
 # eval "afetch | cowsay -n -f small"
