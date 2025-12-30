@@ -1,0 +1,34 @@
+# /etc/default/grub configuration
+# Optimized for Fedora Workstation (chained after rEFInd)
+
+# Timeout in seconds. 
+# Since rEFInd manages the initial selection, keep this low (e.g., 2-5s)
+# just to allow selecting an older kernel if the new one breaks.
+GRUB_TIMEOUT=5
+
+# Distribution name fetcher
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+
+# Default Menu Entry
+# '0': Always select the first entry (The latest installed Kernel).
+# 'saved': Would remember the last selection (NOT desired in this setup).
+GRUB_DEFAULT=0
+
+# Disable submenus for a flat, cleaner list
+GRUB_DISABLE_SUBMENU=true
+
+# Use console output (safer for debugging boot issues)
+GRUB_TERMINAL_OUTPUT="console"
+
+# --- KERNEL PARAMETERS ---
+# rhgb: Red Hat Graphical Boot (loading logo)
+# quiet: Suppress verbose boot logs
+# audit=0: Disable kernel auditing (optional optimization for desktop)
+GRUB_CMDLINE_LINUX="rhgb quiet audit=0"
+
+# Disable recovery entries to keep the menu clean
+GRUB_DISABLE_RECOVERY="true"
+
+# --- FEDORA SPECIFIC ---
+# Boot Loader Specification (Required for modern Fedora)
+GRUB_ENABLE_BLSCFG=true

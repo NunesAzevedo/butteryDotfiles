@@ -1,98 +1,115 @@
-
-
 # Buttery Dotfiles 🧈
 
-> My personal, modular configuration files for **Arch Linux (Hyprland)**.
-> Automates the setup of a fully functional environment from a fresh install to a polished desktop.
+> My personal, modular configuration files for **Arch Linux** and **Fedora Workstation**.
+> Automates the setup of a fully functional environment, adapting intelligently to the underlying distribution.
 
 ![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white)
 ![Hyprland](https://img.shields.io/badge/Hyprland-00A4CC?style=for-the-badge&logo=hyprland&logoColor=white)
+![Fedora](https://img.shields.io/badge/Fedora-51A2DA?style=for-the-badge&logo=fedora&logoColor=white)
 ![GNU Stow](https://img.shields.io/badge/GNU_Stow-D02020?style=for-the-badge&logo=gnu&logoColor=white)
 
 ## 📦 What's Inside?
 
 This repository manages configurations for:
-* **Window Manager:** Hyprland (Waybar, nwg-bar, nwg-look)
+* **Window Managers/DE:** Hyprland (Arch) & KDE Plasma (Fedora/Arch)
 * **Shell:** Zsh + Oh My Zsh + Oh My Posh
 * **Terminal:** Kitty
 * **Editor:** Neovim (NvChad base)
-* **Tools:** Tmux, Git, Yay, Btop, Cava, Lazygit
-* **System:** Pacman, Makepkg, GRUB, Keyd (root configs)
+* **Tools:** Tmux, Git, Btop, Cava, Lazygit
+* **System Internals:**
+    * **Arch:** Pacman, Makepkg, Yay
+    * **Fedora:** DNF5, COPR
+    * **Shared:** Keyd (Remaps), Fonts
 
 ## 🚀 Installation (One-Command Setup)
 
-The installation process is fully scripted and idempotent. It handles system packages, root configurations, and user dotfiles automatically.
+The installation process is orchestrated by a master script that detects your distribution and applies the correct strategies.
 
 ### Prerequisites
-* A fresh Arch Linux installation.
-* `git` installed (`sudo pacman -S git`).
+* A fresh installation of **Arch Linux** or **Fedora**.
+* `git` installed (`sudo pacman -S git` or `sudo dnf install git`).
 * An active internet connection.
 
 ### Quick Start
 Run the following command in your terminal:
 
 ```bash
-git clone https://github.com/NunesAzevedo/butteryDotfiles.git ~/butteryDotfiles
+git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
 cd ~/butteryDotfiles
 ./install.sh
 
 ```
-(Note: If you prefer SSH, clone using ```git@github.com:NunesAzevedo/butteryDotfiles.git```)
 
 ---
 
 ## 🛠️ Under the Hood
 
-The setup is orchestrated by `install.sh`, which executes three distinct phases:
+The setup follows a **Facade Pattern**. The root `install.sh` acts as the orchestrator, detecting the OS and delegating tasks to modular scripts in `scripts/` and `os/`.
 
 ### 1. System Configuration (Root)
 
-**Script:** `system/install_system.sh`
+**Script:** `os/$DISTRO/system/install_system.sh`
 
-* Backs up and replaces system-wide configs in `/etc/`.
-* Optimizes **Pacman** (Parallel downloads, colors, multilib).
-* Optimizes **Makepkg** (Uses all CPU cores for compilation).
-* Configures **GRUB** (Boot timeout and visuals).
-* Sets up **Keyd** (Remaps CapsLock to Esc/Ctrl).
+Depending on the detected distro, it applies specific optimizations:
+
+* **Arch Linux:**
+* Optimizes `pacman.conf` (Parallel downloads, colors).
+* Configures `makepkg.conf` (Multicore compilation).
+
+
+* **Fedora:**
+* Optimizes `dnf.conf` (Max parallel downloads, fastest mirror).
+* Updates `grub` defaults (Boot timeout, hidden menu).
+
+
+* **Common (`os/common`):**
+* Installs and configures **Keyd** (System-wide keyboard remapping).
+
+
 
 ### 2. Package Installation
 
-**Script:** `install_packages.sh`
+**Script:** `scripts/install_packages.sh`
 
-* Installs base tools (`base-devel`, `stow`, `git`).
-* Bootstraps **Yay** (AUR Helper) if missing.
-* Installs official packages from `pkglist_native.txt`.
-* Installs AUR packages from `pkglist_aur.txt`.
-* Sets up Zsh plugins and Oh My Posh themes.
+* **Arch:** Bootstraps **Yay**, installs Native & AUR packages.
+* **Fedora:** Configures **COPR**, installs Native, COPR & Flatpak packages.
+* **Shell:** Sets up Zsh, Oh My Zsh, and Oh My Posh for both.
 
 ### 3. Dotfiles Linking (Stow)
 
-**Script:** `install_dotfiles.sh`
+**Script:** `scripts/install_dotfiles.sh`
 
-* Uses **GNU Stow** to symlink configurations from this repo to `~/.config/` and `~/`.
-* Automatically ignores system folders and scripts.
-* Modular structure: `hypr/` maps to `~/.config/hypr/`, `zsh/` maps to `~/`, etc.
+* Uses **GNU Stow** to symlink configurations from this repo to `~/.config/`.
+* Automatically installs fonts from `assets/fonts`.
+* Ignores system infrastructure folders (`os/`, `scripts/`) to keep `$HOME` clean.
 
 ---
 
-## 🧪 Testing (Docker)
+## 📂 Structure
 
-You can verify the installation scripts safely inside a Docker container before running them on real hardware.
+The repository is organized to separate logic (scripts) from data (configs).
 
-```bash
-# 1. Create a clean Arch Linux container (Privileged is required for Pacman sandbox)
-sudo docker run -it --rm --privileged --name arch_test archlinux:latest bash
-
-# 2. Inside the container, setup the environment:
-pacman -Sy --noconfirm git base-devel sudo
-useradd -m -G wheel -s /bin/bash tester
-echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
-su - tester
-
-# 3. Clone and Run
-git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
-cd ~/butteryDotfiles
-./install.sh
+```text
+butteryDotfiles/
+├── install.sh                  # Master Orchestrator (Entry Point)
+├── scripts/                    # Automation Logic
+│   ├── install_packages.sh     # Package Manager Wrapper
+│   ├── install_dotfiles.sh     # Stow & Assets Linker
+│   ├── backup_packages.sh      # Backup Tool
+│   └── lib/utils.sh            # Shared Library (Colors, Helpers)
+├── os/                         # OS-Specific Data
+│   ├── arch/
+│   │   ├── system/             # Arch Root Configs
+│   │   ├── pkglist_native.txt  # Arch Packages
+│   │   └── pkglist_aur.txt     # AUR Packages
+│   ├── fedora/
+│   │   ├── system/             # Fedora Root Configs
+│   │   ├── pkglist_dnf.txt     # DNF Packages
+│   │   └── pkglist_copr.txt    # COPR Packages
+│   └── common/                 # Shared Root Configs (e.g., Keyd)
+├── hypr/                       # User Configs (.config/hypr)
+├── nvim/                       # User Configs (.config/nvim)
+└── ...
 
 ```
 
@@ -102,11 +119,11 @@ cd ~/butteryDotfiles
 
 ### Keeping the repo updated
 
-When you install new programs or change settings, keep the repository in sync:
+When you install new programs, use the included backup script. It intelligently detects your distro and updates the correct package lists.
 
 1. **Backup Package Lists:**
 ```bash
-./backup_packages.sh
+./scripts/backup_packages.sh
 
 ```
 
@@ -114,39 +131,45 @@ When you install new programs or change settings, keep the repository in sync:
 2. **Commit Changes:**
 ```bash
 git add .
-git commit -m "feat: updated configs and package lists"
+git commit -m "chore: update package lists for $(lsb_release -si)"
 git push
 
 ```
-Or use the alias ```updot``` in this dotfiles.
 
 
 
 ### Updating Symlinks
 
-If you add new configuration folders, simply run:
+If you add new configuration folders (e.g., adding a `waybar` folder), simply run the installer again or the specific submodule:
 
 ```bash
-./install_dotfiles.sh
+./scripts/install_dotfiles.sh
 
 ```
 
 ---
 
-## 📂 Structure
+## 🧪 Testing (Docker)
 
-```text
-butteryDotfiles/
-├── install.sh             # Master orchestrator
-├── install_packages.sh    # Package installer
-├── install_dotfiles.sh    # Stow linker
-├── system/                # Root configurations (/etc)
-│   └── install_system.sh  # Root config installer
-├── pkglist_native.txt     # Official packages list
-├── pkglist_aur.txt        # AUR packages list
-├── hypr/                  # Hyprland configs (.config/hypr)
-├── nvim/                  # Neovim configs (.config/nvim)
-└── ...
+You can verify the installation scripts safely inside a Docker container.
+
+**Arch Linux Test:**
+
+```bash
+# 1. Start Container
+docker run -it --rm --privileged --name arch_test archlinux:base-devel bash
+
+# 2. Setup User & Sudo (simulate real env)
+pacman -Sy --noconfirm git sudo
+useradd -m -G wheel -s /bin/bash tester
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
+su - tester
+
+# 3. Clone & Run
+git clone [https://github.com/NunesAzevedo/butteryDotfiles.git](https://github.com/NunesAzevedo/butteryDotfiles.git) ~/butteryDotfiles
+cd ~/butteryDotfiles
+./install.sh
 
 ```
+
 

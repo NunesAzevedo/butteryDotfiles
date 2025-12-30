@@ -1,68 +1,93 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT: install.sh (MASTER)
-# DESCRIÇÃO:
-#   Orquestrador que executa todo o processo de instalação na ordem correta.
-#   Grava todo o output (sucesso e erros) em um arquivo de log oculto.
+# SCRIPT: install.sh
+# DESCRIPTION: Master Orchestrator for ButteryDotfiles.
+#   1. Detects the host Distribution (Arch/Fedora).
+#   2. Applies System-Level Configurations (Root).
+#   3. Installs Packages & Shell Environment.
+#   4. Links User Dotfiles (Stow).
 # ==============================================================================
 
-# Definição do arquivo de log (com Timestamp para não sobrescrever anteriores)
-LOG_FILE=".install_$(date +%Y-%m-%d_%H-%M-%S).log"
-
-# Cores para o Mestre
-VIOLET='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-# Garante que estamos na raiz do repositório
+# Ensure execution from repository root
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-echo -e "${VIOLET}🧈 INICIANDO O SETUP COMPLETO DO BUTTERYDOTFILES...${NC}"
-echo -e "${VIOLET}📝 Um log detalhado será salvo em: ${CYAN}$LOG_FILE${NC}"
+# 1. Import Shared Library
+#    Used here for colors and distro detection logic.
+if [ -f "scripts/lib/utils.sh" ]; then
+    source "scripts/lib/utils.sh"
+else
+    echo "❌ Error: scripts/lib/utils.sh not found. Is the repo structure correct?"
+    exit 1
+fi
+
+# Define Log File
+LOG_FILE=".install_$(date +%Y-%m-%d_%H-%M-%S).log"
+
+# BRANDING: Use Yellow for "Buttery" identity
+echo -e "${YELLOW}🧈 STARTING BUTTERYDOTFILES SETUP...${NC}"
+echo -e "${YELLOW}📝 Detailed log will be saved to: ${CYAN}$LOG_FILE${NC}"
 echo ""
 
-# A mágica acontece aqui:
-# Agrupamos todos os comandos dentro de { ... } e jogamos para o 'tee'
+# ==============================================================================
+# MAIN EXECUTION BLOCK
+# ==============================================================================
+# All output inside this block is captured by 'tee' into the log file
 {
     echo "===================================================================="
-    echo " INÍCIO DO PROCESSO: $(date)"
+    echo " START: $(date)"
     echo "===================================================================="
 
-    # 1. Dar permissão de execução para todos os scripts
-    echo "--> Tornando scripts executáveis..."
-    chmod +x install_packages.sh install_dotfiles.sh system/install_system.sh
+    # 1. Initialization
+    detect_distro # Sets $DISTRO global variable
 
-    # 2. Configurações de Sistema (Root / /etc)
-    # É importante rodar antes para configurar o pacman.conf (multilib/downloads)
+    log_info "Granting execution permissions to scripts..."
+    chmod +x scripts/*.sh
+    chmod +x os/*/system/*.sh 2>/dev/null || true
+
+    # 2. System Configuration (Root Level)
+    #    Resolves the script path dynamically based on the detected distro.
     echo ""
     echo "===================================================================="
-    echo " ETAPA 1: CONFIGURAÇÕES DE SISTEMA (Requer Sudo)"
+    echo " STEP 1: SYSTEM CONFIGURATION (Root/Sudo)"
     echo "===================================================================="
-    ./system/install_system.sh
+    
+    SYSTEM_SCRIPT="./os/$DISTRO/system/install_system.sh"
+    
+    if [ -f "$SYSTEM_SCRIPT" ]; then
+        log_info "Executing system setup for $DISTRO..."
+        "$SYSTEM_SCRIPT"
+    else
+        log_warn "No system script found for $DISTRO ($SYSTEM_SCRIPT)."
+        log_warn "Skipping system configuration step."
+    fi
 
-    # 3. Instalação de Pacotes (Pacman/Yay/OMZ/OMP)
+    # 3. Package Installation (User/Root Level)
+    #    Installs Pacman/DNF packages, Flatpaks, and Shell tools.
     echo ""
     echo "===================================================================="
-    echo " ETAPA 2: INSTALAÇÃO DE PACOTES E SHELL"
+    echo " STEP 2: PACKAGES & SHELL SETUP"
     echo "===================================================================="
-    ./install_packages.sh
+    ./scripts/install_packages.sh
 
-    # 4. Linkagem dos Dotfiles (Stow)
+    # 4. Dotfiles Linking (User Level)
+    #    Runs GNU Stow and asset copying.
     echo ""
     echo "===================================================================="
-    echo " ETAPA 3: APLICAÇÃO DOS DOTFILES (STOW)"
+    echo " STEP 3: DOTFILES LINKING (Stow)"
     echo "===================================================================="
-    ./install_dotfiles.sh
+    ./scripts/install_dotfiles.sh
 
     echo ""
     echo "===================================================================="
-    echo " FIM DO PROCESSO: $(date)"
+    echo " END: $(date)"
     echo "===================================================================="
 
-# 2>&1 redireciona os ERROS para a saída padrão, para o tee pegar tudo.
 } 2>&1 | tee "$LOG_FILE"
 
+# ==============================================================================
+# POST-EXECUTION
+# ==============================================================================
 echo ""
-echo -e "${VIOLET}🏁 Instalação finalizada!${NC}"
-echo -e "   Se algo deu errado, verifique o arquivo: ${CYAN}$LOG_FILE${NC}"
+echo -e "${GREEN}🏁 Installation finished!${NC}"
+echo -e "   If errors occurred, check the log: ${CYAN}$LOG_FILE${NC}"
