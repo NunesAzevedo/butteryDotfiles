@@ -1,0 +1,29 @@
+# ==============================================================================
+# FILE: docker/Dockerfile.fedora
+# DESCRIPTION: A clean Fedora environment to test ButteryDotfiles.
+#              Simulates a fresh install with a non-root user.
+# ==============================================================================
+
+FROM fedora:latest
+
+# 1. Update and Install Prerequisites
+#    - git: to clone the repo.
+#    - sudo: for privilege elevation.
+#    - which & findutils: standard tools sometimes missing in minimal images.
+#    - util-linux-user: contains 'chsh' (useful if you change shells).
+RUN dnf install -y git sudo which findutils util-linux-user vim
+
+# 2. Create a Non-Root User
+#    We create 'tester' and add them to the 'wheel' group (Fedora's sudoers group).
+RUN useradd -m -G wheel -s /bin/bash tester
+
+# 3. Configure Passwordless Sudo
+#    Allows the script to run sudo commands without interaction.
+RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
+
+# 4. Set User Context
+USER tester
+WORKDIR /home/tester
+
+# 5. Default Command
+CMD ["/bin/bash"]

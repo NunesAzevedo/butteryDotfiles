@@ -1,0 +1,27 @@
+# ==============================================================================
+# FILE: docker/Dockerfile.arch
+# DESCRIPTION: A clean Arch Linux environment to test ButteryDotfiles.
+#              Simulates a fresh install with a non-root user.
+# ==============================================================================
+
+FROM archlinux:latest
+
+# 1. Update and Install Prerequisites
+#    We need 'base-devel' for makepkg/yay, and 'git' to clone/run the repo.
+#    'sudo' is required because the script switches between user and root contexts.
+RUN pacman -Sy --noconfirm git sudo base-devel vim
+
+# 2. Create a Non-Root User
+#    Dotfiles should never be installed as root. We create 'tester'.
+RUN useradd -m -G wheel -s /bin/bash tester
+
+# 3. Configure Passwordless Sudo
+#    This allows the script to run 'sudo pacman ...' without blocking for input.
+RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
+
+# 4. Set User Context
+USER tester
+WORKDIR /home/tester
+
+# 5. Default Command
+CMD ["/bin/bash"]
