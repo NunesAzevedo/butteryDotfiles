@@ -46,11 +46,27 @@ DOCKER_BUILDKIT=1 docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
 
 # 4. Run Container
 log_header "Starting Container..."
+
+# FIX: Detect Host Timezone to sync log timestamps
+if command -v timedatectl &> /dev/null; then
+    HOST_TZ=$(timedatectl show --value -p Timezone 2>/dev/null)
+elif [ -f /etc/timezone ]; then
+    HOST_TZ=$(cat /etc/timezone)
+else
+    HOST_TZ="UTC"
+fi
+
+# Fallback if detection returned empty
+if [ -z "$HOST_TZ" ]; then HOST_TZ="UTC"; fi
+
+log_info "Timezone detected: $HOST_TZ"
 log_info "Mounting current directory to: $CONTAINER_HOME"
 log_info "Entering interactive shell..."
 echo ""
 
+# FIX: Added -e TZ="$HOST_TZ" to pass the timezone to the container
 docker run -it --rm --privileged \
+    -e TZ="$HOST_TZ" \
     -v "$REPO_ROOT:$CONTAINER_HOME" \
     -w "$CONTAINER_HOME" \
     "$IMAGE_NAME"

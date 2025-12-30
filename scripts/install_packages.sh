@@ -146,9 +146,11 @@ else
 fi
 
 # 6.2 Oh My Posh
+# CRITICAL FIX: Ensure local bin directory exists regardless of installation state
+mkdir -p "$HOME/.local/bin"
+
 if ! command -v oh-my-posh &> /dev/null; then
     log_info "Installing Oh My Posh..."
-    mkdir -p "$HOME/.local/bin"
     curl -fsSL https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
 else
     log_success "Oh My Posh is already installed."

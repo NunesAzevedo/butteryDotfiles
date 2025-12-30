@@ -79,6 +79,8 @@ show_summary() {
         else
             # Success scenario
             echo -e "${GREEN}✅ SUCCESS! No errors reported.${NC}"
+            # FIX: Added log file path display for success scenario too
+            echo -e "Check the log: ${CYAN}$LOG_FILE${NC}"
             echo -e "${YELLOW}⚠️  NOTE: Some changes (Groups, Shell, GRUB) require a System Reboot to take full effect.${NC}"
             echo -e "Enjoy your buttery smooth system! 🧈"
         fi
@@ -117,7 +119,7 @@ trap show_summary EXIT
     
     # Background loop to refresh sudo timeout every 60s while the script runs
     # We capture the PID ($!) to kill it cleanly later.
-    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done > /dev/null 2>&1 &
     SUDO_LOOP_PID=$!
 
     # SELF-HEALING: Ensure all scripts are executable before proceeding.
