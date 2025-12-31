@@ -2,7 +2,8 @@
 # ==============================================================================
 # SCRIPT: docker/start_test.sh
 # DESCRIPTION: Helper to build and run Docker test environments for ButteryDotfiles.
-# USAGE: ./docker/start_test.sh [arch|fedora]
+# USAGE: ./docker/start_test.sh [arch|fedora] [clean]
+#        'clean' argument forces a rebuild without cache.
 # ==============================================================================
 
 set -e
@@ -26,9 +27,10 @@ fi
 
 # 2. Argument Parsing
 TARGET="$1"
+MODE="$2" # Optional: "clean" to disable cache
 
 if [[ "$TARGET" != "arch" && "$TARGET" != "fedora" ]]; then
-    log_error "Usage: $0 [arch|fedora]"
+    log_error "Usage: $0 [arch|fedora] [clean]"
     exit 1
 fi
 
@@ -36,15 +38,21 @@ DOCKERFILE="docker/Dockerfile.$TARGET"
 IMAGE_NAME="buttery_${TARGET}_test"
 CONTAINER_HOME="/home/tester/butteryDotfiles"
 
-# 3. Build Image (MODERN BUILDKIT ENABLED)
+# 3. Configure Build Options
+BUILD_FLAGS=""
+if [ "$MODE" == "clean" ]; then
+    log_header "🧹 Clean build requested (No Cache)..."
+    BUILD_FLAGS="--no-cache"
+fi
+
+# 4. Build Image (MODERN BUILDKIT ENABLED)
 log_header "Building Docker Image for: $TARGET"
 log_info "Using $DOCKERFILE with BuildKit..."
 
-# FIX: We add 'DOCKER_BUILDKIT=1' to force the modern builder.
-# This removes the warning and speeds up the build.
-DOCKER_BUILDKIT=1 docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
+# FIX: Added BUILD_FLAGS variable to inject --no-cache when requested
+DOCKER_BUILDKIT=1 docker build $BUILD_FLAGS -t "$IMAGE_NAME" -f "$DOCKERFILE" .
 
-# 4. Run Container
+# 5. Run Container
 log_header "Starting Container..."
 
 # FIX: Detect Host Timezone to sync log timestamps

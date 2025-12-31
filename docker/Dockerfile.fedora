@@ -11,19 +11,24 @@ FROM fedora:latest
 #    - sudo: for privilege elevation.
 #    - which & findutils: standard tools sometimes missing in minimal images.
 #    - util-linux-user: contains 'chsh' (useful if you change shells).
-RUN dnf install -y git sudo which findutils util-linux-user vim
+#    - passwd: used to set the user password.
+RUN dnf install -y git sudo which findutils util-linux-user vim passwd
 
 # 2. Create a Non-Root User
 #    We create 'tester' and add them to the 'wheel' group (Fedora's sudoers group).
 RUN useradd -m -G wheel -s /bin/bash tester
 
-# 3. Configure Passwordless Sudo
-#    Allows the script to run sudo commands without interaction.
-RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
+# 3. Set a dummy password (Strategy: "Fallback")
+#    User: tester | Password: tester (Intuitive match)
+RUN echo "tester:tester" | chpasswd
 
-# 4. Set User Context
+# 4. Configure Passwordless Sudo (Strategy: "Brute Force")
+#    We append directly to /etc/sudoers to avoid issues with includedir permissions.
+RUN echo "tester ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# 5. Set User Context
 USER tester
 WORKDIR /home/tester
 
-# 5. Default Command
+# 6. Default Command
 CMD ["/bin/bash"]

@@ -15,13 +15,17 @@ RUN pacman -Sy --noconfirm git sudo base-devel vim
 #    Dotfiles should never be installed as root. We create 'tester'.
 RUN useradd -m -G wheel -s /bin/bash tester
 
-# 3. Configure Passwordless Sudo
-#    This allows the script to run 'sudo pacman ...' without blocking for input.
-RUN echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd
+# 3. Set a dummy password (Strategy: "Fallback")
+#    User: tester | Password: tester (Intuitive match)
+RUN echo "tester:tester" | chpasswd
 
-# 4. Set User Context
+# 4. Configure Passwordless Sudo (Strategy: "Brute Force")
+#    We append directly to /etc/sudoers to avoid issues with includedir permissions.
+RUN echo "tester ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# 5. Set User Context
 USER tester
 WORKDIR /home/tester
 
-# 5. Default Command
+# 6. Default Command
 CMD ["/bin/bash"]
