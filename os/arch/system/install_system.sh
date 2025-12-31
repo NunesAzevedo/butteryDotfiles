@@ -4,7 +4,7 @@
 # LOCATION: os/arch/system/install_system.sh
 # DESCRIPTION: Applies system-wide configurations for Arch Linux.
 #              - Keyd (Input Remapping) - Shared
-#              - Pacman Configuration (Parallel downloads, colors)
+#              - Pacman Configuration (Parallel downloads, colors, multilib)
 #              - GRUB Configuration (Theming, timeouts)
 # ==============================================================================
 
@@ -51,12 +51,20 @@ fi
 # ==============================================================================
 # 2. PACMAN CONFIGURATION
 # ==============================================================================
-PACMAN_CONF_SRC="$SOURCE_DIR/pacman.conf"
+# FIX: Adjusted path to match tree structure (added /etc/)
+PACMAN_CONF_SRC="$SOURCE_DIR/etc/pacman.conf"
 PACMAN_CONF_DEST="/etc/pacman.conf"
 
 if [ -f "$PACMAN_CONF_SRC" ]; then
     CHANGES_DETECTED=0 # Reset state
     check_and_update "$PACMAN_CONF_DEST" "$PACMAN_CONF_SRC" "Pacman Config"
+    
+    # FIX: Force sync if config changed to enable multilib immediately
+    # This prevents "target not found: steam" errors later
+    if [ "$CHANGES_DETECTED" -eq 1 ]; then
+        log_info "Pacman config updated. Syncing repositories..."
+        sudo pacman -Sy
+    fi
 else
     log_warn "pacman.conf not found in repository ($PACMAN_CONF_SRC). Skipping."
 fi
@@ -64,11 +72,11 @@ fi
 # ==============================================================================
 # 3. GRUB CONFIGURATION
 # ==============================================================================
-GRUB_CONF_SRC="$SOURCE_DIR/grub"
+# FIX: Adjusted path to match tree structure (added /etc/default/)
+GRUB_CONF_SRC="$SOURCE_DIR/etc/default/grub"
 GRUB_CONF_DEST="/etc/default/grub"
 
 if [ -f "$GRUB_CONF_SRC" ]; then
-    # CRITICAL FIX: Reset flag so previous changes don't trigger GRUB regeneration
     CHANGES_DETECTED=0
 
     check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"
