@@ -16,32 +16,51 @@ SOURCE_DIR="$REPO_ROOT/os/$DISTRO"
 log_header "Starting Package Restoration for: $DISTRO"
 
 # ==============================================================================
-# HELPER: Install List
+# HELPER: Install List (Enhanced with Ignore Logic)
 # ==============================================================================
 install_list() {
     local list_file="$1"
     local install_cmd="$2"
     local label="$3"
+    local ignore_file="$4" # Optional: Path to an ignore list
 
     if [ ! -f "$list_file" ]; then
         log_warn "File not found: $(basename "$list_file"). Skipping $label."
         return
     fi
 
-    log_info "Installing $label packages..."
-    # Reads the file, ignores comments (#) and empty lines, replaces newlines with spaces
-    if $install_cmd -y $(grep -vE "^\s*#|^\s*$" "$list_file" | tr '\n' ' '); then
+    log_info "Processing $label packages..."
+
+    # 1. Clean the list (remove comments and empty lines)
+    local clean_list=$(grep -vE "^\s*#|^\s*$" "$list_file")
+
+    # 2. Filter out ignored packages if ignore file exists
+    if [ -n "$ignore_file" ] && [ -f "$ignore_file" ]; then
+        log_info "Applying ignore list: $(basename "$ignore_file")..."
+        # Grep -vFf uses the file as a list of fixed strings to exclude
+        clean_list=$(echo "$clean_list" | grep -vFf "$ignore_file" || true)
+    fi
+
+    # 3. Convert to single line for batch install
+    local batch_list=$(echo "$clean_list" | tr '\n' ' ')
+
+    if [ -z "$batch_list" ]; then
+        log_info "No packages to install for $label (after filtering)."
+        return
+    fi
+
+    # 4. Attempt Batch Install
+    log_info "Installing filtered list..."
+    if $install_cmd -y $batch_list; then
         log_success "All $label packages installed successfully."
     else
         log_error "Batch installation failed. Attempting one-by-one..."
         
-        # Fallback loop: Try installing packages individually
-        while read -r pkg || [ -n "$pkg" ]; do
-            [[ -z "$pkg" || "$pkg" =~ ^# ]] && continue
-            
-            # Log specific errors to the summary report instead of ignoring them
+        # 5. Fallback loop (Iterate over the clean_list variable)
+        echo "$clean_list" | while read -r pkg; do
+            [[ -z "$pkg" ]] && continue
             $install_cmd -y "$pkg" || log_error "Failed to install package: $pkg"
-        done < "$list_file"
+        done
     fi
 }
 
@@ -52,11 +71,7 @@ if [ "$DISTRO" == "arch" ]; then
     log_info "Initializing Arch Keyring..."
     sudo pacman-key --init
     sudo pacman-key --populate archlinux
-
-    log_info "Syncing Pacman repositories..."
     sudo pacman -Sy --noconfirm
-
-    log_info "Refreshing Arch Keyring package..."
     sudo pacman -S --noconfirm archlinux-keyring
 
     log_info "Installing base tools..."
@@ -78,8 +93,6 @@ if [ "$DISTRO" == "arch" ]; then
     if [ -f "$SOURCE_DIR/pkglist_aur.txt" ]; then
         log_info "Installing AUR packages..."
         grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_aur.txt" | grep -vE '^yay$' > /tmp/aur_clean.txt
-        
-        # Check if file is not empty before running yay
         if [ -s "/tmp/aur_clean.txt" ]; then
             yay -S --needed --noconfirm - < /tmp/aur_clean.txt
         fi
@@ -98,6 +111,42 @@ elif [ "$DISTRO" == "fedora" ]; then
         echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
     fi
 
+    # --------------------------------------------------------------------------
+    # 4.1 VS CODE SETUP (Manual Install as requested)
+    # --------------------------------------------------------------------------
+    log_info "Setting up VS Code Repository..."
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+    
+    # Check updates to refresh repo metadata
+    sudo dnf check-update || true 
+    
+    # Explicitly install 'code' here (since it's ignored in the main list)
+    log_info "Installing VS Code..."
+    sudo dnf install -y code || log_error "Failed to install VS Code."
+
+    # --------------------------------------------------------------------------
+    # 4.2 GITKRAKEN SETUP (Direct RPM Download)
+    # --------------------------------------------------------------------------
+    if ! command -v gitkraken &> /dev/null; then
+        log_info "Installing GitKraken (Latest RPM)..."
+        # Download latest RPM to /tmp
+        curl -L https://release.gitkraken.com/linux/gitkraken-amd64.rpm -o /tmp/gitkraken.rpm
+        
+        # Install using DNF (resolves dependencies automatically)
+        if sudo dnf install -y /tmp/gitkraken.rpm; then
+            log_success "GitKraken installed."
+        else
+            log_error "Failed to install GitKraken RPM."
+        fi
+        rm -f /tmp/gitkraken.rpm
+    else
+        log_success "GitKraken already installed."
+    fi
+
+    # --------------------------------------------------------------------------
+    # 4.3 COPR & NATIVE PACKAGES
+    # --------------------------------------------------------------------------
     COPR_REPO_LIST="$SOURCE_DIR/repolist_copr.txt"
     if [ -f "$COPR_REPO_LIST" ]; then
         log_info "Enabling COPR repositories..."
@@ -107,33 +156,27 @@ elif [ "$DISTRO" == "fedora" ]; then
         done < "$COPR_REPO_LIST"
     fi
 
-    install_list "$SOURCE_DIR/pkglist_dnf.txt" "sudo dnf install" "Fedora Native"
-    install_list "$SOURCE_DIR/pkglist_copr.txt" "sudo dnf install" "Fedora COPR"
+    # Install packages with ignore logic
+    IGNORE_FILE="$SOURCE_DIR/pkglist_ignore.txt"
+    install_list "$SOURCE_DIR/pkglist_dnf.txt" "sudo dnf install" "Fedora Native" "$IGNORE_FILE"
+    install_list "$SOURCE_DIR/pkglist_copr.txt" "sudo dnf install" "Fedora COPR" "$IGNORE_FILE"
 fi
 
 # ==============================================================================
-# 5. FLATPAK INSTALLATION (CORREÇÃO DA APOSTA)
+# 5. FLATPAK INSTALLATION
 # ==============================================================================
 FLATPAK_LIST="$SOURCE_DIR/pkglist_flatpak.txt"
 
 if command -v flatpak &> /dev/null && [ -f "$FLATPAK_LIST" ]; then
     log_info "Configuring Flatpaks..."
     
-    # 1. TENTA adicionar o repositório.
-    # O 'if' captura o código de saída. Se falhar, vai direto para o 'else'.
     if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-        
-        # 2. Só entra aqui se o remote-add funcionou.
         APPS=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
-        
         if [ -n "$APPS" ]; then
             log_info "Installing Flatpak applications..."
-            # 3. Mesmo aqui dentro, usamos '|| log_warn' para que um erro de pacote não mate o script.
             flatpak install -y --noninteractive flathub $APPS || log_warn "Flatpak install encountered issues, continuing..."
         fi
     else
-        # 4. Se o remote-add falhou, avisamos e PULAMOS a instalação.
-        # Isso garante que o script continue para a seção 6 (Shell).
         log_warn "Failed to add Flathub remote. Skipping Flatpak installation."
     fi
 fi
@@ -163,12 +206,11 @@ else
     log_success "Oh My Posh is already installed."
 fi
 
-# Ensure OMP is in path
 if [ -f "$HOME/.local/bin/oh-my-posh" ] && [ ! -f "/usr/bin/oh-my-posh" ]; then
-    sudo ln -sf "$HOME/.local/bin/oh-my-posh" /usr/bin/oh-my-posh
+    sudo ln -sf "$HOME/.local/bin/oh-my-posh" /usr/bin/oh-my-posh || true
 fi
 
-# 6.4 Zsh Plugins (Auto-Install commonly used plugins)
+# 6.4 Zsh Plugins
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 install_zsh_plugin() {

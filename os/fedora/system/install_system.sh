@@ -40,7 +40,7 @@ if [ -f "$KEYD_CONF_SRC" ]; then
     CHANGES_DETECTED=0 # Reset state
     check_and_update "$KEYD_CONF_DEST" "$KEYD_CONF_SRC" "Keyd Config"
     
-    # Reload keyd if changed or not active
+    # Reload keyd if changed
     if [ "$CHANGES_DETECTED" -eq 1 ] || ! systemctl is-active --quiet keyd; then
         log_info "    Reloading keyd service..."
         sudo systemctl enable --now keyd &>/dev/null || true
@@ -51,7 +51,8 @@ fi
 # ==============================================================================
 # 2. DNF CONFIGURATION
 # ==============================================================================
-DNF_CONF_SRC="$SOURCE_DIR/dnf.conf"
+# FIX: Adjusted path to match tree structure (added /etc/dnf/)
+DNF_CONF_SRC="$SOURCE_DIR/etc/dnf/dnf.conf"
 DNF_CONF_DEST="/etc/dnf/dnf.conf"
 
 if [ -f "$DNF_CONF_SRC" ]; then
@@ -67,7 +68,8 @@ fi
 # ==============================================================================
 # 3. GRUB CONFIGURATION
 # ==============================================================================
-GRUB_CONF_SRC="$SOURCE_DIR/grub"
+# FIX: Adjusted path to match tree structure (added /etc/default/)
+GRUB_CONF_SRC="$SOURCE_DIR/etc/default/grub"
 GRUB_CONF_DEST="/etc/default/grub"
 
 if [ -f "$GRUB_CONF_SRC" ]; then
