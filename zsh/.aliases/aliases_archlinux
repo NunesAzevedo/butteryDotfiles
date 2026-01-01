@@ -44,6 +44,7 @@ alias h='$EDITOR ~/.config/hypr/hyprland.conf'
 alias o='okular'
 alias nconfig='cd ~/.config/nvim/ && $EDITOR . && cd -'
 alias lz='lazygit'
+alias copy='wl-copy 2>/dev/null || xclip -selection clipboard 2>/dev/null || pbcopy 2>/dev/null'
 
 # Aliases for studies
 alias x='xournalpp'
