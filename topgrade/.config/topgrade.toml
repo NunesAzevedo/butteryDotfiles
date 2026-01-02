@@ -29,7 +29,10 @@ display_time = true
 cleanup = true
 
 # Ignorar falhas em passos específicos
-ignore_failures = ["containers"]
+# ignore_failures = []
+
+# Desabilitar ferramentas que você não usa
+disable = ["yadm"]
 
 # ==============================================================================
 # PÓS-COMANDOS - LIMPEZA (executados APÓS as atualizações)
@@ -57,8 +60,8 @@ ignore_failures = ["containers"]
 # Arch: usar yay como AUR helper
 arch_package_manager = "yay"
 
-# Argumentos para yay (não atualizar pacotes -devel)
-yay_arguments = "--nodevel"
+# Argumentos para yay (por padrão yay já ignora pacotes -devel)
+yay_arguments = "--cleanafter --batchinstall"
 
 # ==============================================================================
 # FLATPAK
@@ -84,6 +87,7 @@ arguments = "--rebase --autostash"
 # ==============================================================================
 [containers]
 runtime = "docker"
+ignored_containers = ["buttery_fedora_test", "buttery_arch_test"]
 
 # ==============================================================================
 # NPM
