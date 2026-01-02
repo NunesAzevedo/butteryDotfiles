@@ -25,6 +25,7 @@ dialog
 discord
 dmenu
 docker
+docker-buildx
 dolphin
 dosfstools
 dunst
