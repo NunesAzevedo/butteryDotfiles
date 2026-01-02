@@ -1,2 +1,63 @@
+# ==============================================================================
+# Packages to IGNORE during Fedora installation
+# These are either manually installed or problematic in certain environments
+# ==============================================================================
+
+# Manually installed (separate logic in install_packages.sh)
 code
 gitkraken
+
+# ==============================================================================
+# Anaconda/Installer packages - Not needed post-install
+# These are only used during Fedora installation and cause conflicts
+# ==============================================================================
+anaconda
+anaconda-core
+anaconda-gui
+anaconda-install-env-deps
+anaconda-live
+anaconda-tui
+anaconda-widgets
+initial-setup
+initial-setup-gui
+initial-setup-gui-wayland-plasma
+kdump-anaconda-addon
+blivet-gui-runtime
+
+# ==============================================================================
+# Container-specific packages - Conflict with desktop identity
+# fedora-release-identity-container conflicts with fedora-release-identity-kde
+# Only needed when testing in Docker containers
+# ==============================================================================
+fedora-release-identity-kde
+
+# ==============================================================================
+# Kernel packages - Should use what's already installed
+# Installing these can break boot on running systems
+# ==============================================================================
+kernel
+kernel-core
+kernel-modules
+kernel-modules-core
+kernel-modules-extra
+
+# ==============================================================================
+# Deprecated/Renamed packages in Fedora 43
+# These no longer exist in F43 repos (were in F42)
+# ==============================================================================
+gdk-pixbuf2-modules
+pakchois
+xl2tpd
+
+# ==============================================================================
+# Container/Docker conflict packages
+# These conflict with systemd-standalone-* used in container images
+# Will install fine on real systems but fail in Docker testing
+# ==============================================================================
+systemd
+systemd-networkd
+systemd-oomd-defaults
+systemd-pam
+systemd-resolved
+systemd-sysusers
+systemd-udev

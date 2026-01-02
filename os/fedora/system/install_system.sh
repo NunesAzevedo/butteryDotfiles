@@ -30,66 +30,64 @@ COMMON_SYS_DIR="$CURRENT_DIR/../../../os/common/system"
 log_header "Configuring Fedora System..."
 
 # ==============================================================================
+# 0. PRE-REQUISITES (CRITICAL FIX)
+# ==============================================================================
+# Installs 'diffutils' (for 'cmp' command used in utils.sh) and other core tools
+# immediately to prevent script failure during check_and_update.
+log_info "Installing core system tools..."
+sudo dnf install -y git stow util-linux-user unzip curl diffutils
+
+# ==============================================================================
 # 1. COMMON CONFIGURATIONS (Shared)
 # ==============================================================================
 # Integrating the common keyd config
 KEYD_CONF_SRC="$COMMON_SYS_DIR/etc/keyd/default.conf"
 KEYD_CONF_DEST="/etc/keyd/default.conf"
 
-if [ -f "$KEYD_CONF_SRC" ]; then
-    CHANGES_DETECTED=0 # Reset state
-    check_and_update "$KEYD_CONF_DEST" "$KEYD_CONF_SRC" "Keyd Config"
-    
-    # Reload keyd if changed
-    if [ "$CHANGES_DETECTED" -eq 1 ] || ! systemctl is-active --quiet keyd; then
-        log_info "    Reloading keyd service..."
-        sudo systemctl enable --now keyd &>/dev/null || true
-        sudo keyd reload &>/dev/null || true
+# check_and_update returns: 0=changed, 1=no change, 2=critical error
+check_and_update "$KEYD_CONF_DEST" "$KEYD_CONF_SRC" "Keyd Config" "required"
+keyd_result=$?
+
+if [ $keyd_result -eq 2 ]; then
+    log_error "Keyd configuration is missing! Check os/common/system/etc/keyd/default.conf"
+    # Continue anyway - don't exit, let user see full report
+elif [ $keyd_result -eq 0 ]; then
+    log_info "    Reloading keyd service..."
+    if command -v keyd &> /dev/null; then
+        sudo systemctl enable --now keyd &>/dev/null || log_warn "Failed to enable keyd service"
+        sudo keyd reload &>/dev/null || log_warn "Failed to reload keyd"
+    else
+        log_warn "keyd command not found. Install keyd package first."
     fi
 fi
 
 # ==============================================================================
 # 2. DNF CONFIGURATION
 # ==============================================================================
-# FIX: Adjusted path to match tree structure (added /etc/dnf/)
 DNF_CONF_SRC="$SOURCE_DIR/etc/dnf/dnf.conf"
 DNF_CONF_DEST="/etc/dnf/dnf.conf"
 
-if [ -f "$DNF_CONF_SRC" ]; then
-    # Reset flag to ensure isolation (prevents false positives from previous steps)
-    CHANGES_DETECTED=0
-    
-    # check_and_update handles backups, sudo, and copy automatically
-    check_and_update "$DNF_CONF_DEST" "$DNF_CONF_SRC" "DNF Config"
-else
-    log_warn "dnf.conf not found in repository ($DNF_CONF_SRC). Skipping."
+if check_and_update "$DNF_CONF_DEST" "$DNF_CONF_SRC" "DNF Config"; then
+    log_success "DNF configuration updated."
 fi
 
 # ==============================================================================
 # 3. GRUB CONFIGURATION
 # ==============================================================================
-# FIX: Adjusted path to match tree structure (added /etc/default/)
 GRUB_CONF_SRC="$SOURCE_DIR/etc/default/grub"
 GRUB_CONF_DEST="/etc/default/grub"
 
-if [ -f "$GRUB_CONF_SRC" ]; then
-    # FIX: Reset flag so DNF changes don't trigger GRUB regeneration falsely
-    CHANGES_DETECTED=0
-    
-    check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"
-
-    # Only regenerate GRUB if changes were made specifically to the GRUB file
-    if [ "$CHANGES_DETECTED" -eq 1 ]; then
-        if command -v grub2-mkconfig &> /dev/null; then
-            log_info "Regenerating GRUB bootloader config..."
-            # Capture failure in the error report (|| log_error)
-            sudo grub2-mkconfig -o /boot/grub2/grub.cfg || log_error "Failed to regenerate GRUB config."
-        else
-            log_warn "grub2-mkconfig command not found. Skipping bootloader update."
-        fi
+if check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"; then
+    if command -v grub2-mkconfig &> /dev/null; then
+        log_info "Backing up current GRUB config..."
+        # Create a timestamped backup before regenerating (Fedora uses /boot/grub2)
+        sudo cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.bak-$(date +%s)
+        
+        log_info "Regenerating GRUB bootloader config..."
+        sudo grub2-mkconfig -o /boot/grub2/grub.cfg || log_error "Failed to regenerate GRUB config."
+    else
+        log_warn "grub2-mkconfig command not found. Skipping bootloader update."
     fi
-else
-    log_warn "GRUB config file not found in repository ($GRUB_CONF_SRC). Skipping."
 fi
 
 log_success "Fedora system configuration finished."

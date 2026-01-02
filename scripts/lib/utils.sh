@@ -46,47 +46,59 @@ log_warn() {
 }
 
 log_error() { 
-    echo -e "${RED}❌ ERROR: $1${NC}"
-    # Appends the error message to the tracker file for the final summary report
-    echo "❌ $1" >> "$ERROR_LOG_TRACKER"
+    echo -e "${RED}❌ ERROR: $1${NC}" 
+    # Log to tracker file for final summary
+    echo "$1" >> "$ERROR_LOG_TRACKER"
 }
 
 # ==============================================================================
-# 4. DISTRIBUTION DETECTION
+# 4. DISTRO DETECTION
 # ==============================================================================
 detect_distro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        export DISTRO=$ID
+        DISTRO=$ID
         log_info "Distro detected: $DISTRO"
     else
-        log_error "Could not detect distribution via /etc/os-release."
+        log_error "Cannot detect Linux distribution."
         exit 1
     fi
 }
 
 # ==============================================================================
-# 5. SMART INSTALL FUNCTION (With Auto-Sudo, Copy & Backup)
+# 5. CONFIGURATION MANAGER (CORE LOGIC)
 # ==============================================================================
-# Global flag to track if any backup/copy operation resulted in changes
-export CHANGES_DETECTED=0
-
+# Compares source and destination files.
+# If different: Creates backup, Overwrites destination, Returns 0 (True).
+# If identical: Does nothing, Returns 1 (False).
+#
+# ARGUMENTS:
+#   $1 - target_dest: Destination path (e.g., /etc/keyd/default.conf)
+#   $2 - source_file: Source file in the repository
+#   $3 - label: Human-readable name for logging
+#   $4 - required: (optional) "required" to treat missing source as ERROR
+#
+# RETURNS:
+#   0 - Changes were made (file created or updated)
+#   1 - No changes (file identical or source missing)
+#   2 - Critical error (required file missing)
+#
 check_and_update() {
-    local target_dest="$1"  # The destination on the system (e.g., /etc/pacman.conf)
-    local source_file="$2"  # The file in your repo
+    local target_dest="$1"
+    local source_file="$2"
     local label="$3"
-    local target_dir
-    target_dir=$(dirname "$target_dest")
+    local required="${4:-optional}"  # Default: optional (backward compatible)
 
-    # Helper: Tries to create dir as user, falls back to sudo if denied
+    # Helper: Ensures the directory exists
     ensure_dir() {
-        if [ ! -d "$1" ]; then
-            mkdir -p "$1" 2>/dev/null || sudo mkdir -p "$1"
+        local dir=$(dirname "$1")
+        if [ ! -d "$dir" ]; then
+            log_info "Creating directory: $dir"
+            sudo mkdir -p "$dir"
         fi
     }
 
-    # Helper: Creates a .bak copy of the existing target before overwriting
-    # This prevents data loss if the user had custom configs.
+    # Helper: Creates a backup if the file exists
     create_backup() {
         local file="$1"
         if [ -f "$file" ]; then
@@ -101,34 +113,48 @@ check_and_update() {
         cp -f "$1" "$2" 2>/dev/null || sudo cp -f "$1" "$2"
     }
 
-    ensure_dir "$target_dir"
+    # 1. Validate Source (IMPROVED: Distinguish required vs optional)
+    if [ ! -f "$source_file" ]; then
+        if [ "$required" == "required" ]; then
+            log_error "$label: REQUIRED source file not found!"
+            log_error "    Expected: $source_file"
+            log_error "    This is a critical configuration. Please ensure the file exists."
+            return 2 # Critical error
+        else
+            log_warn "$label: Source file not found ($source_file). Skipping."
+            return 1 # No changes made (optional file)
+        fi
+    fi
 
-    # Case 1: File doesn't exist (New file)
+    ensure_dir "$target_dest"
+
+    # 2. Case: New File (Destination doesn't exist)
     if [ ! -f "$target_dest" ]; then
         log_warn "🆕 $label: File created (did not exist)."
         
         if try_copy "$source_file" "$target_dest"; then
-             CHANGES_DETECTED=1
+             return 0 # SUCCESS: Changes happened
         else
              log_error "Failed to create $target_dest (Permission denied?)"
+             return 1 # FAILURE
         fi
-        return
     fi
 
-    # Case 2: File exists. Check for differences.
+    # 3. Case: Update Existing (Compare content)
     if cmp -s "$target_dest" "$source_file"; then
         log_success "$label: No changes detected."
+        return 1 # NO CHANGE
     else
         log_info "🔄 $label: Changes detected! Updating file..."
+        log_info "    (Backup created at ${target_dest}.bak)"
         
-        # CRITICAL FIX: Backup the original system file before overwriting
         create_backup "$target_dest"
         
         if try_copy "$source_file" "$target_dest"; then
-             CHANGES_DETECTED=1
-             log_info "    (Backup created at $target_dest.bak)"
+             return 0 # SUCCESS: Changes happened
         else
-             log_error "Failed to update $target_dest (Permission denied?)"
+             log_error "Failed to update $target_dest"
+             return 1 # FAILURE
         fi
     fi
 }

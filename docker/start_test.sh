@@ -73,7 +73,15 @@ log_info "Entering interactive shell..."
 echo ""
 
 # FIX: Added -e TZ="$HOST_TZ" to pass the timezone to the container
+# --cpus: Reserve some cores for host system (nproc - 6, minimum 2)
+TOTAL_CPUS=$(nproc 2>/dev/null || echo "8")
+CONTAINER_CPUS=$((TOTAL_CPUS - 6))
+if [ "$CONTAINER_CPUS" -lt 2 ]; then CONTAINER_CPUS=2; fi
+
+log_info "CPUs: $CONTAINER_CPUS of $TOTAL_CPUS (reserving 6 for host)"
+
 docker run -it --rm --privileged \
+    --cpus="$CONTAINER_CPUS" \
     -e TZ="$HOST_TZ" \
     -v "$REPO_ROOT:$CONTAINER_HOME" \
     -w "$CONTAINER_HOME" \

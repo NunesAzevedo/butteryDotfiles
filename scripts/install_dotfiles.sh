@@ -39,33 +39,21 @@ fi
 # ==============================================================================
 
 if ! command -v stow &> /dev/null; then
-    log_error "GNU Stow is not installed. Please install it first."
+    log_error "GNU Stow is not installed. Skipping dotfiles linking."
     exit 1
 fi
 
-# Load ignore list from external file for modularity
-IGNORE_FILE=".dotfilesignore"
-IGNORE_STRING=""
+# Define folders to ignore (scripts, os, git related, etc)
+# Using a space-separated string for easier matching
+IGNORE_STRING=" . .. .git .github .gitignore .dotfilesignore scripts os assets docker README.md LICENSE "
 
-if [ -f "$IGNORE_FILE" ]; then
-    # Reads the file, removes comments/empty lines, and creates a space-separated string
-    # grep -vE: Ignores lines starting with # or empty lines
-    # tr -d '\r': Removes Windows carriage returns (CR) for cross-platform safety
-    # tr '\n' ' ': Replaces newlines with spaces to create the list string
-    IGNORE_STRING=" $(grep -vE "^\s*#|^\s*$" "$IGNORE_FILE" | tr -d '\r' | tr '\n' ' ') "
-    log_info "Loaded exclusion list from $IGNORE_FILE"
-else
-    log_warn "No $IGNORE_FILE found. Using defaults."
-    # Fallback to critical defaults if file is missing
-    IGNORE_STRING=" .git .github install.sh scripts os assets lib docker README.md LICENSE"
-fi
+log_info "Linking configuration files..."
 
-log_info "Linking configuration folders..."
-
+# Loop through each directory in the repo root
 for folder in */; do
-    app_name=${folder%/}
+    app_name="${folder%/}" # Remove trailing slash
 
-    # Check if the folder name exists inside the IGNORE_STRING
+    # Skip ignored directories/files
     if [[ "$IGNORE_STRING" =~ " $app_name " ]]; then
         continue
     fi
@@ -77,14 +65,28 @@ for folder in */; do
     # Detects if system-generated files (like .bashrc, .zshrc) exist as real files.
     # If so, backs them up to allow Stow to create symlinks.
     # --------------------------------------------------------------------------
-    find "$app_name" -maxdepth 1 -type f -name ".*" -print0 | while IFS= read -r -d '' source_file; do
-        filename=$(basename "$source_file")
+    # Scan top-level files in the package to see if they collide with HOME
+    find "$app_name" -maxdepth 1 -print0 | while IFS= read -r -d '' source_path; do
+        # Skip the directory itself
+        if [ "$source_path" == "$app_name" ]; then continue; fi
+        
+        filename=$(basename "$source_path")
         target="$HOME/$filename"
 
-        # Check: If Target exists AND is NOT a symlink (i.e., real file)
-        if [ -f "$target" ] && [ ! -L "$target" ]; then
-            # We move (mv) instead of copy because we need to clear the path for the symlink
-            mv "$target" "$target.bak"
+        # FIX: CRITICAL SAFETY CHECK
+        # If the source is a directory (e.g., .config) and target is a directory,
+        # DO NOT MOVE IT. Let Stow merge the contents inside.
+        # We only backup if it's a file conflict OR a file vs dir conflict.
+        if [ -d "$source_path" ] && [ -d "$target" ] && [ ! -L "$target" ]; then
+            continue
+        fi
+
+        # Check: If Target exists AND is NOT a symlink (i.e., it's a real file/dir)
+        # This handles the case where distro creates a default .bashrc
+        if [ -e "$target" ] && [ ! -L "$target" ]; then
+            # We backup existing file to clear the path for the symlink
+            # Using mv ensures we don't lose the original system config
+            mv "$target" "$target.bak-$(date +%s)"
         fi
     done
     
@@ -92,12 +94,12 @@ for folder in */; do
     # EXECUTE STOW
     # --------------------------------------------------------------------------
     # FIX: Added -t "$HOME" to ensure links go to home dir regardless of repo location
-    if stow -t "$HOME" -R "$app_name"; then
+    if stow -t "$HOME" -R "$app_name" 2>/dev/null; then
         echo -e "${GREEN}OK${NC}"
     else
         echo -e "${RED}FAIL${NC}"
         # Log specifically so it appears in the final Red Report
-        log_error "Stow conflict detected in package: $app_name"
+        log_error "Stow conflict detected in package: $app_name. Check manually."
     fi
 done
 

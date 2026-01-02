@@ -3,6 +3,8 @@
 # SCRIPT: install_packages.sh
 # LOCATION: scripts/install_packages.sh
 # DESCRIPTION: Installs system packages, flatpaks, and shell environments.
+#              - Handles Arch (Pacman/AUR) & Fedora (DNF/COPR)
+#              - FEATURES: CRLF Fix & Smart Diff (Only installs missing pkgs)
 # ==============================================================================
 
 set -e
@@ -13,16 +15,27 @@ source "$CURRENT_DIR/lib/utils.sh"
 detect_distro
 SOURCE_DIR="$REPO_ROOT/os/$DISTRO"
 
+# FIX: Robust User Detection (Crucial for Docker/Sudo contexts)
+TARGET_USER="${SUDO_USER:-${USER}}"
+if [ -z "$TARGET_USER" ]; then TARGET_USER=$(whoami); fi
+
 log_header "Starting Package Restoration for: $DISTRO"
 
 # ==============================================================================
-# HELPER: Install List (Enhanced with Ignore Logic)
+# HELPER: Smart Install List (Diff Strategy)
 # ==============================================================================
+# Arguments:
+# 1. List File Path
+# 2. Install Command (e.g., "sudo dnf install")
+# 3. Label (for logging)
+# 4. Ignore File (optional)
+# 5. Check Command (optional - command to list currently installed pkgs)
 install_list() {
     local list_file="$1"
     local install_cmd="$2"
     local label="$3"
-    local ignore_file="$4" # Optional: Path to an ignore list
+    local ignore_file="$4"
+    local check_cmd="$5"
 
     if [ ! -f "$list_file" ]; then
         log_warn "File not found: $(basename "$list_file"). Skipping $label."
@@ -31,37 +44,101 @@ install_list() {
 
     log_info "Processing $label packages..."
 
-    # 1. Clean the list (remove comments and empty lines)
-    local clean_list=$(grep -vE "^\s*#|^\s*$" "$list_file")
+    # 1. Clean the list: Remove comments, empty lines, and FIX WINDOWS CRLF (\r)
+    local desired_list=$(grep -vE "^\s*#|^\s*$" "$list_file" | tr -d '\r' | sort -u)
 
-    # 2. Filter out ignored packages if ignore file exists
+    # 2. Filter out ignored packages
     if [ -n "$ignore_file" ] && [ -f "$ignore_file" ]; then
         log_info "Applying ignore list: $(basename "$ignore_file")..."
-        # Grep -vFf uses the file as a list of fixed strings to exclude
-        clean_list=$(echo "$clean_list" | grep -vFf "$ignore_file" || true)
+        # FIX: Clean ignore file too - remove comments and empty lines before using as filter
+        local clean_ignore="/tmp/clean_ignore_$$.tmp"
+        grep -vE "^\s*#|^\s*$" "$ignore_file" | tr -d '\r' > "$clean_ignore"
+        if [ -s "$clean_ignore" ]; then
+            desired_list=$(echo "$desired_list" | grep -vFxf "$clean_ignore" || true)
+        fi
+        rm -f "$clean_ignore"
     fi
 
-    # 3. Convert to single line for batch install
-    local batch_list=$(echo "$clean_list" | tr '\n' ' ')
-
-    if [ -z "$batch_list" ]; then
-        log_info "No packages to install for $label (after filtering)."
+    if [ -z "$desired_list" ]; then
+        log_info "No packages found in list for $label."
         return
     fi
 
-    # 4. Attempt Batch Install
-    log_info "Installing filtered list..."
-    if $install_cmd -y $batch_list; then
-        log_success "All $label packages installed successfully."
-    else
-        log_error "Batch installation failed. Attempting one-by-one..."
+    # 3. SMART DIFF: Filter out already installed packages
+    local missing_list="$desired_list"
+    
+    if [ -n "$check_cmd" ]; then
+        log_info "Checking installed packages (Diff Strategy)..."
         
-        # 5. Fallback loop (Iterate over the clean_list variable)
-        echo "$clean_list" | while read -r pkg; do
-            [[ -z "$pkg" ]] && continue
-            $install_cmd -y "$pkg" || log_error "Failed to install package: $pkg"
-        done
+        # Create temp files for comparison
+        local tmp_installed="/tmp/installed_pkgs_$$.tmp"
+        local tmp_desired="/tmp/desired_pkgs_$$.tmp"
+        
+        # FIX: Execute check command using bash -c to handle special characters properly
+        # This ensures rpm -qa --qf '%{NAME}\n' works correctly
+        bash -c "$check_cmd" 2>/dev/null | sort -u > "$tmp_installed"
+        echo "$desired_list" > "$tmp_desired"
+        
+        # DEBUG: Log counts for verification
+        local installed_count=$(wc -l < "$tmp_installed")
+        local desired_count=$(wc -l < "$tmp_desired")
+        log_info "    Found $installed_count installed packages, $desired_count desired packages"
+        
+        # comm -23: Show lines unique to file 1 (Desired but NOT Installed)
+        missing_list=$(comm -23 "$tmp_desired" "$tmp_installed")
+        
+        local missing_count=$(echo "$missing_list" | grep -c . || echo 0)
+        log_info "    $missing_count packages need to be installed"
+        
+        # Cleanup
+        rm -f "$tmp_installed" "$tmp_desired"
     fi
+
+    # 4. Install Missing Packages
+    # Convert newlines to spaces
+    local batch_list=$(echo "$missing_list" | tr '\n' ' ')
+
+    if [ -z "$batch_list" ]; then
+        log_success "All packages for $label are already installed! Skipping."
+        return
+    fi
+
+    log_info "Installing missing packages..."
+    
+    # =========================================================================
+    # TWO-PHASE INSTALLATION STRATEGY
+    # Phase 1: Batch install with --skip-broken (fast, installs most packages)
+    # Phase 2: Re-check what's still missing and retry one-by-one (thorough)
+    # =========================================================================
+    
+    # Phase 1: Fast batch install
+    log_info "Phase 1: Batch installation (with --skip-broken for speed)..."
+    $install_cmd -y --skip-broken $batch_list 2>&1 || true
+    
+    # Phase 2: Check what's still missing and retry individually
+    if [ -n "$check_cmd" ]; then
+        log_info "Phase 2: Verifying installation and retrying skipped packages..."
+        
+        # Re-check installed packages
+        local tmp_now_installed="/tmp/now_installed_$$.tmp"
+        bash -c "$check_cmd" 2>/dev/null | sort -u > "$tmp_now_installed"
+        
+        # Find what's STILL missing after batch
+        local still_missing=$(comm -23 <(echo "$missing_list" | sort) "$tmp_now_installed")
+        rm -f "$tmp_now_installed"
+        
+        local still_count=$(echo "$still_missing" | grep -c . || echo 0)
+        
+        if [ "$still_count" -gt 0 ]; then
+            log_info "    $still_count packages still need attention. Installing one-by-one..."
+            echo "$still_missing" | while read -r pkg; do
+                [[ -z "$pkg" ]] && continue
+                $install_cmd -y "$pkg" 2>&1 || log_error "Failed to install package: $pkg"
+            done
+        fi
+    fi
+    
+    log_success "$label installation complete."
 }
 
 # ==============================================================================
@@ -71,12 +148,12 @@ if [ "$DISTRO" == "arch" ]; then
     log_info "Initializing Arch Keyring..."
     sudo pacman-key --init
     sudo pacman-key --populate archlinux
-    sudo pacman -Sy --noconfirm
-    sudo pacman -S --noconfirm archlinux-keyring
+    sudo pacman -Sy --noconfirm --needed archlinux-keyring
 
     log_info "Installing base tools..."
     sudo pacman -S --needed --noconfirm base-devel git stow unzip curl
 
+    # Yay Bootstrap
     if ! command -v yay &> /dev/null; then
         log_warn "Yay not found. Bootstrapping..."
         git clone https://aur.archlinux.org/yay.git /tmp/yay
@@ -85,18 +162,44 @@ if [ "$DISTRO" == "arch" ]; then
         log_success "Yay installed."
     fi
 
+    # Native Packages (Smart Check: pacman -Qq)
     if [ -f "$SOURCE_DIR/pkglist_native.txt" ]; then
-        log_info "Installing Native Arch packages..."
-        grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_native.txt" | sudo pacman -S --needed --noconfirm -
+        install_list "$SOURCE_DIR/pkglist_native.txt" \
+                     "sudo pacman -S --needed --noconfirm" \
+                     "Arch Native" \
+                     "" \
+                     "pacman -Qq"
     fi
 
+    # AUR Packages (Custom Logic with CRLF fix)
     if [ -f "$SOURCE_DIR/pkglist_aur.txt" ]; then
-        log_info "Installing AUR packages..."
-        grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_aur.txt" | grep -vE '^yay$' > /tmp/aur_clean.txt
-        if [ -s "/tmp/aur_clean.txt" ]; then
-            yay -S --needed --noconfirm - < /tmp/aur_clean.txt
+        log_info "Processing AUR packages..."
+        # FIX: Added tr -d '\r'
+        grep -vE "^\s*#|^\s*$" "$SOURCE_DIR/pkglist_aur.txt" | tr -d '\r' | grep -vE '^yay$' > /tmp/aur_full.txt
+        
+        # Filter installed AUR packages manually
+        if [ -s "/tmp/aur_full.txt" ]; then
+             # Get installed packages
+             pacman -Qq > /tmp/installed_aur_check.tmp
+             # Find missing
+             comm -23 <(sort /tmp/aur_full.txt) <(sort /tmp/installed_aur_check.tmp) > /tmp/aur_missing.txt
+             
+             if [ -s "/tmp/aur_missing.txt" ]; then
+                 log_info "Installing missing AUR packages..."
+                 # Try batch first
+                 if ! yay -S --needed --noconfirm - < /tmp/aur_missing.txt; then
+                     log_error "Batch AUR failed. Trying one-by-one."
+                     while read -r pkg; do
+                         yay -S --needed --noconfirm "$pkg" || log_error "Failed AUR: $pkg"
+                     done < /tmp/aur_missing.txt
+                 else
+                     log_success "AUR packages updated."
+                 fi
+             else
+                 log_success "All AUR packages already installed."
+             fi
         fi
-        rm -f /tmp/aur_clean.txt
+        rm -f /tmp/aur_*.txt /tmp/installed_aur_check.tmp
     fi
 
 # ==============================================================================
@@ -104,62 +207,57 @@ if [ "$DISTRO" == "arch" ]; then
 # ==============================================================================
 elif [ "$DISTRO" == "fedora" ]; then
     log_info "Configuring DNF..."
-
     sudo dnf install -y git stow util-linux-user unzip curl
 
     if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
         echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
     fi
 
-    # --------------------------------------------------------------------------
-    # 4.1 VS CODE SETUP (Manual Install as requested)
-    # --------------------------------------------------------------------------
-    log_info "Setting up VS Code Repository..."
+    # 4.1 VS CODE
+    log_info "Setting up VS Code Repo..."
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
-    
-    # Check updates to refresh repo metadata
     sudo dnf check-update || true 
-    
-    # Explicitly install 'code' here (since it's ignored in the main list)
-    log_info "Installing VS Code..."
     sudo dnf install -y code || log_error "Failed to install VS Code."
 
-    # --------------------------------------------------------------------------
-    # 4.2 GITKRAKEN SETUP (Direct RPM Download)
-    # --------------------------------------------------------------------------
+    # 4.2 GITKRAKEN
     if ! command -v gitkraken &> /dev/null; then
-        log_info "Installing GitKraken (Latest RPM)..."
-        # Download latest RPM to /tmp
+        log_info "Installing GitKraken..."
         curl -L https://release.gitkraken.com/linux/gitkraken-amd64.rpm -o /tmp/gitkraken.rpm
-        
-        # Install using DNF (resolves dependencies automatically)
-        if sudo dnf install -y /tmp/gitkraken.rpm; then
-            log_success "GitKraken installed."
-        else
-            log_error "Failed to install GitKraken RPM."
-        fi
+        sudo dnf install -y /tmp/gitkraken.rpm || log_error "Failed GitKraken install."
         rm -f /tmp/gitkraken.rpm
     else
         log_success "GitKraken already installed."
     fi
 
-    # --------------------------------------------------------------------------
-    # 4.3 COPR & NATIVE PACKAGES
-    # --------------------------------------------------------------------------
+    # 4.3 COPR & NATIVE (With Smart Diff)
     COPR_REPO_LIST="$SOURCE_DIR/repolist_copr.txt"
     if [ -f "$COPR_REPO_LIST" ]; then
         log_info "Enabling COPR repositories..."
+        # FIX: Added tr -d '\r'
         while read -r repo || [ -n "$repo" ]; do
-            [[ -z "$repo" || "$repo" =~ ^# ]] && continue
-            sudo dnf copr enable -y "$repo"
+            clean_repo=$(echo "$repo" | tr -d '\r')
+            [[ -z "$clean_repo" || "$clean_repo" =~ ^# ]] && continue
+            sudo dnf copr enable -y "$clean_repo"
         done < "$COPR_REPO_LIST"
+        log_success "Fedora COPR update complete."
     fi
 
-    # Install packages with ignore logic
     IGNORE_FILE="$SOURCE_DIR/pkglist_ignore.txt"
-    install_list "$SOURCE_DIR/pkglist_dnf.txt" "sudo dnf install" "Fedora Native" "$IGNORE_FILE"
-    install_list "$SOURCE_DIR/pkglist_copr.txt" "sudo dnf install" "Fedora COPR" "$IGNORE_FILE"
+    
+    # Native Packages - Check against: rpm -qa --qf "%{NAME}\n"
+    install_list "$SOURCE_DIR/pkglist_dnf.txt" \
+                 "sudo dnf install" \
+                 "Fedora Native" \
+                 "$IGNORE_FILE" \
+                 "rpm -qa --qf '%{NAME}\n'"
+
+    # COPR Packages - Same check strategy
+    install_list "$SOURCE_DIR/pkglist_copr.txt" \
+                 "sudo dnf install" \
+                 "Fedora COPR" \
+                 "$IGNORE_FILE" \
+                 "rpm -qa --qf '%{NAME}\n'"
 fi
 
 # ==============================================================================
@@ -170,71 +268,105 @@ FLATPAK_LIST="$SOURCE_DIR/pkglist_flatpak.txt"
 if command -v flatpak &> /dev/null && [ -f "$FLATPAK_LIST" ]; then
     log_info "Configuring Flatpaks..."
     
-    if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-        APPS=$(grep -vE "^\s*#|^\s*$" "$FLATPAK_LIST" | tr '\n' ' ')
-        if [ -n "$APPS" ]; then
-            log_info "Installing Flatpak applications..."
-            flatpak install -y --noninteractive flathub $APPS || log_warn "Flatpak install encountered issues, continuing..."
-        fi
-    else
-        log_warn "Failed to add Flathub remote. Skipping Flatpak installation."
+    # FIX: Initialize Flatpak system if repo doesn't exist (common in fresh installs/Docker)
+    if [ ! -d "/var/lib/flatpak/repo" ]; then
+        log_info "Initializing Flatpak system repository..."
+        sudo flatpak repair --system 2>/dev/null || true
     fi
+    
+    # Add Flathub remote if not present (try user first, then system)
+    if ! flatpak remote-list 2>/dev/null | grep -q "flathub"; then
+        log_info "Adding Flathub repository..."
+        flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || \
+        sudo flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
+    fi
+    
+    # Smart Install for Flatpak
+    # Check command: flatpak list --app --columns=application
+    install_list "$FLATPAK_LIST" \
+                 "flatpak install -y --noninteractive flathub" \
+                 "Flatpak Apps" \
+                 "" \
+                 "flatpak list --app --columns=application"
 fi
 
 # ==============================================================================
-# 6. SHELL CONFIGURATION (Zsh & Oh My Posh)
+# 6. SHELL CONFIGURATION
 # ==============================================================================
 log_info "Configuring Shell Environment..."
 
-# 6.1 Oh My Zsh
+# Oh My Zsh
 if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
     log_info "Installing Oh My Zsh..."
     rm -rf "$HOME/.oh-my-zsh"
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    if [ -f "$HOME/.zshrc" ]; then rm "$HOME/.zshrc"; fi
-else
-    log_success "Oh My Zsh is already installed."
-fi
-
-# 6.2 Oh My Posh
-mkdir -p "$HOME/.local/bin"
-
-if ! command -v oh-my-posh &> /dev/null; then
-    log_info "Installing Oh My Posh..."
-    curl -fsSL https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
-else
-    log_success "Oh My Posh is already installed."
-fi
-
-if [ -f "$HOME/.local/bin/oh-my-posh" ] && [ ! -f "/usr/bin/oh-my-posh" ]; then
-    sudo ln -sf "$HOME/.local/bin/oh-my-posh" /usr/bin/oh-my-posh || true
-fi
-
-# 6.4 Zsh Plugins
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-
-install_zsh_plugin() {
-    local repo_url="$1"
-    local plugin_name="$2"
-    local target_dir="$ZSH_CUSTOM/plugins/$plugin_name"
-
-    if [ ! -d "$target_dir" ]; then
-        log_info "Cloning Zsh plugin: $plugin_name..."
-        git clone "$repo_url" "$target_dir" --depth 1 || log_error "Failed to clone $plugin_name"
+    if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended; then
+        [ -f "$HOME/.zshrc" ] && rm "$HOME/.zshrc"
     else
-        log_success "Plugin $plugin_name already exists."
+        log_error "Failed to install Oh My Zsh."
+    fi
+else
+    log_success "Oh My Zsh already installed."
+fi
+
+# Oh My Posh
+mkdir -p "$HOME/.local/bin"
+if ! command -v oh-my-posh &> /dev/null && [ ! -f "$HOME/.local/bin/oh-my-posh" ]; then
+    log_info "Installing Oh My Posh..."
+    # FIX: Use official install method without -s flag before bash (was causing issues)
+    if curl -fsSL https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"; then
+        log_success "Oh My Posh installed successfully."
+    else
+        log_error "Failed to install Oh My Posh."
+    fi
+else
+    log_success "Oh My Posh already installed."
+fi
+
+# Create symlink to /usr/bin for system-wide access (optional)
+if [ -f "$HOME/.local/bin/oh-my-posh" ] && [ ! -f "/usr/bin/oh-my-posh" ]; then
+    log_info "Creating symlink for oh-my-posh in /usr/bin..."
+    sudo ln -sf "$HOME/.local/bin/oh-my-posh" /usr/bin/oh-my-posh 2>/dev/null || true
+fi
+
+# Plugins
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+install_zsh_plugin() {
+    local repo="$1"
+    local name="$2"
+    local dir="$ZSH_CUSTOM/plugins/$name"
+    if [ -d "$HOME/.oh-my-zsh" ] && [ ! -d "$dir" ]; then
+        log_info "Cloning $name..."
+        git clone "$repo" "$dir" --depth 1 || log_error "Failed clone $name"
     fi
 }
+install_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
+install_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
 
-if [ -d "$HOME/.oh-my-zsh" ]; then
-    install_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
-    install_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+# Shell Change
+# FIX: Use absolute path for zsh - 'which' can return wrong paths in some environments
+ZSH_PATH=""
+if [ -x "/usr/bin/zsh" ]; then
+    ZSH_PATH="/usr/bin/zsh"
+elif [ -x "/bin/zsh" ]; then
+    ZSH_PATH="/bin/zsh"
 fi
 
-# 6.3 Set Default Shell
-if [ "$SHELL" != "$(which zsh)" ]; then
-    log_info "Changing default shell to Zsh..."
-    sudo chsh -s "$(which zsh)" "$USER" || true
+if [ -n "$ZSH_PATH" ] && [ "$SHELL" != "$ZSH_PATH" ]; then
+    # Ensure zsh is in /etc/shells
+    if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
+        log_info "Adding $ZSH_PATH to /etc/shells..."
+        echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
+    fi
+    
+    if command -v chsh >/dev/null; then
+        log_info "Changing shell to Zsh ($ZSH_PATH) for $TARGET_USER..."
+        sudo chsh -s "$ZSH_PATH" "$TARGET_USER" || log_warn "Manual shell change required: chsh -s $ZSH_PATH"
+    fi
+    
+    # Inform user about shell change taking effect on next login
+    echo ""
+    log_info "💡 Shell changed to Zsh. It will be active on your next login."
+    log_info "   To start using Zsh now, run: exec zsh"
 fi
 
 log_success "Package installation complete!"

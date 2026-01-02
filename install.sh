@@ -13,7 +13,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # 1. Import Shared Library
-#    Used here for colors and distro detection logic.
 if [ -f "scripts/lib/utils.sh" ]; then
     source "scripts/lib/utils.sh"
 else
@@ -24,7 +23,6 @@ fi
 # ==============================================================================
 # SAFETY CHECK: DO NOT RUN AS ROOT
 # ==============================================================================
-# Prevents installing dotfiles into /root or messing up user permissions
 if [ "$EUID" -eq 0 ]; then
     echo -e "${RED}❌ CRITICAL ERROR: Do not run this script as root (sudo).${NC}"
     echo -e "   Run it as your normal user. The script will ask for sudo permissions when needed."
@@ -32,133 +30,135 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-# Define Log File
-LOG_FILE=".install_$(date +%Y-%m-%d_%H-%M-%S).log"
+# ==============================================================================
+# INITIALIZATION & LOGGING
+# ==============================================================================
+# Detect Distro EARLY to include it in the log filename
+detect_distro
 
-# Clean up previous error tracker to avoid false positives
+# Define Log File with Distro Name (Requested Improvement)
+LOG_FILE=".install_${DISTRO}_$(date +%Y-%m-%d_%H-%M-%S).log"
 rm -f "$ERROR_LOG_TRACKER"
 
-# Initialize PID variable for process cleanup
-SUDO_LOOP_PID=""
-
-# BRANDING: Use Yellow for "Buttery" identity
-echo -e "${YELLOW}🧈 STARTING BUTTERYDOTFILES SETUP...${NC}"
-echo -e "${YELLOW}📝 Detailed log will be saved to: ${CYAN}$LOG_FILE${NC}"
-echo ""
+# Pre-Log Header
+{
+    echo -e "${YELLOW}🧈 STARTING BUTTERYDOTFILES SETUP (${DISTRO^^})...${NC}"
+    echo -e "${YELLOW}📝 Detailed log will be saved to: ${CYAN}$LOG_FILE${NC}"
+    echo ""
+} | tee "$LOG_FILE"
 
 # ==============================================================================
-# SUMMARY HANDLER (Runs at the end, always)
+# HELPER: SUDO KEEP-ALIVE
+# ==============================================================================
+ask_for_sudo() {
+    log_info "Validating sudo permissions..."
+    sudo -v || { log_error "Sudo validation failed. Password incorrect or not in sudoers."; exit 1; }
+    
+    # Background loop to refresh sudo timeout every 60s
+    ( 
+        while true; do 
+            sudo -n true
+            sleep 60
+            kill -0 "$$" || exit
+        done 2>/dev/null 
+    ) &
+    SUDO_LOOP_PID=$!
+}
+
+# ==============================================================================
+# SUMMARY HANDLER
 # ==============================================================================
 show_summary() {
     local exit_code=$?
-    
-    # 1. Clean up background processes (Sudo Loop)
-    if [ -n "$SUDO_LOOP_PID" ]; then
-        kill "$SUDO_LOOP_PID" 2>/dev/null || true
-    fi
 
-    # 2. Generate Report and append it to the log file explicitly
+    # KILL THE SUDO LOOP
+    if [ -n "$SUDO_LOOP_PID" ]; then
+        kill "$SUDO_LOOP_PID" 2>/dev/null
+    fi
+    
+    # Generate Report
     {
         echo ""
         echo "===================================================================="
         echo " INSTALLATION SUMMARY"
         echo "===================================================================="
         
-        # Check for collected errors in the tracker file
         if [ -s "$ERROR_LOG_TRACKER" ]; then
             echo -e "${RED}${BOLD}⚠️  ERRORS WERE DETECTED DURING INSTALLATION:${NC}"
             echo -e "${RED}"
-            # Print the content of the error log with a red tint
             cat "$ERROR_LOG_TRACKER"
             echo -e "${NC}"
             echo -e "Check the full log for details: ${CYAN}$LOG_FILE${NC}"
         elif [ $exit_code -ne 0 ]; then
-            # Script crashed or was interrupted by user
             echo -e "${RED}❌ Script aborted unexpectedly (Exit Code: $exit_code).${NC}"
             echo -e "Check the log: ${CYAN}$LOG_FILE${NC}"
         else
-            # Success scenario
             echo -e "${GREEN}✅ SUCCESS! No errors reported.${NC}"
-            # FIX: Added log file path display for success scenario too
-            echo -e "Check the log: ${CYAN}$LOG_FILE${NC}"
-            echo -e "${YELLOW}⚠️  NOTE: Some changes (Groups, Shell, GRUB) require a System Reboot to take full effect.${NC}"
+            echo -e "${YELLOW}⚠️  NOTE: Some changes (Groups, Shell, GRUB) require a System Reboot.${NC}"
             echo -e "Enjoy your buttery smooth system! 🧈"
+            echo -e "Full log available at: ${CYAN}$LOG_FILE${NC}"
         fi
     } 2>&1 | tee -a "$LOG_FILE"
 
-    # 3. Switch Shell (Must be done outside the pipe/tee to replace the process)
-    # Only switch if successful and no errors were tracked
+    # Switch Shell if successful AND .zshrc exists
     if [ ! -s "$ERROR_LOG_TRACKER" ] && [ $exit_code -eq 0 ]; then
-        if command -v zsh >/dev/null; then
+        if command -v zsh >/dev/null && [ -f "$HOME/.zshrc" ]; then
             echo -e "${YELLOW}🔄 Switching to Zsh...${NC}"
             exec zsh -l
+        else
+            echo -e "${YELLOW}ℹ️  Zsh installed but .zshrc missing (or errors occurred). Keeping current shell.${NC}"
         fi
     fi
 }
 
-# Trap EXIT signal to run summary no matter what happens (Success, Fail, Ctrl+C)
-trap show_summary EXIT
+trap show_summary EXIT INT TERM
 
 # ==============================================================================
-# MAIN EXECUTION BLOCK
+# PHASE 1: PRE-FLIGHT (Run in Main Shell)
 # ==============================================================================
-# All output inside this block is captured by 'tee' into the log file
+# detect_distro was already called at the top
+ask_for_sudo
+
+# ==============================================================================
+# PHASE 2: MAIN EXECUTION (Logged via Pipe)
+# ==============================================================================
 {
     echo "===================================================================="
     echo " START: $(date)"
+    echo " HOST: $DISTRO"
     echo "===================================================================="
 
-    # 1. Initialization
-    detect_distro # Sets $DISTRO global variable
-
-    # Sudo Keep-Alive Mechanism
-    # Ask for password once, then keep updating the timestamp in the background.
-    echo ""
-    log_info "Validating sudo permissions..."
-    sudo -v || { log_error "Sudo validation failed. Password incorrect or not in sudoers."; exit 1; }
-    
-    # Background loop to refresh sudo timeout every 60s while the script runs
-    # We capture the PID ($!) to kill it cleanly later.
-    while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done > /dev/null 2>&1 &
-    SUDO_LOOP_PID=$!
-
-    # SELF-HEALING: Ensure all scripts are executable before proceeding.
-    # This prevents "Permission denied" errors if files lost their +x flag.
+    # SELF-HEALING: Permissions
     echo ""
     log_info "Ensuring execution permissions for all scripts..."
-    
-    # Check if the helper script exists, then run it explicitly with bash
     if [ -f "./scripts/setup_permissions.sh" ]; then
         bash ./scripts/setup_permissions.sh
     else
-        # Fallback inline command in case the file is missing
         find . -name "*.sh" -type f -exec chmod +x {} +
     fi
 
-    # 2. System Configuration (Root Level)
+    # 1. System Configuration
     echo ""
     echo "===================================================================="
     echo " STEP 1: SYSTEM CONFIGURATION (Root/Sudo)"
     echo "===================================================================="
     
     SYSTEM_SCRIPT="./os/$DISTRO/system/install_system.sh"
-    
     if [ -f "$SYSTEM_SCRIPT" ]; then
         log_info "Executing system setup for $DISTRO..."
         bash "$SYSTEM_SCRIPT"
     else
         log_warn "No system script found for $DISTRO ($SYSTEM_SCRIPT)."
-        log_warn "Skipping system configuration step."
     fi
 
-    # 3. Package Installation (User/Root Level)
+    # 2. Package Installation
     echo ""
     echo "===================================================================="
     echo " STEP 2: PACKAGES & SHELL SETUP"
     echo "===================================================================="
     bash ./scripts/install_packages.sh
 
-    # 4. Dotfiles Linking (User Level)
+    # 3. Dotfiles Linking
     echo ""
     echo "===================================================================="
     echo " STEP 3: DOTFILES LINKING (Stow)"
@@ -170,4 +170,4 @@ trap show_summary EXIT
     echo " END: $(date)"
     echo "===================================================================="
 
-} 2>&1 | tee "$LOG_FILE"
+} 2>&1 | tee -a "$LOG_FILE"
