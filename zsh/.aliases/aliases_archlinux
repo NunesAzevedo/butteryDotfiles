@@ -18,8 +18,7 @@ alias updot='cd ~/butteryDotfiles/ && ./backup_packages.sh && git add . && git c
 
 
 # Atalhos do terminal
-# alias u='sudo pacman -Syu && yay -Syu && flatpak update -y'
-alias u='topgrade -y && sudo paccache -r'
+alias u='topgrade -y'
 alias ue='u && exit'
 alias s='sudo'
 alias e="exit"

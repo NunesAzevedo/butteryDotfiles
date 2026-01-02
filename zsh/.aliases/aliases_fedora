@@ -12,7 +12,6 @@ EDITOR="nvim"
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/
 
 # Atalhos do terminal
-# alias u='sudo $PKGMANAGER update -y && flatpak update -y'
 alias u='topgrade -y'
 alias ue='u && exit'
 alias s='sudo'
