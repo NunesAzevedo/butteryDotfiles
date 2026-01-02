@@ -107,18 +107,85 @@ install_list() {
     
     # =========================================================================
     # TWO-PHASE INSTALLATION STRATEGY
-    # Phase 1: Batch install with --skip-broken (fast, installs most packages)
+    # Phase 1: Batch install (fast)
+    #   - DNF: uses --skip-broken to continue past conflicts
+    #   - Pacman: Try batch, parse errors, retry without problematic packages
     # Phase 2: Re-check what's still missing and retry one-by-one (thorough)
     # =========================================================================
     
     # Phase 1: Fast batch install
-    log_info "Phase 1: Batch installation (with --skip-broken for speed)..."
-    $install_cmd -y --skip-broken $batch_list 2>&1 || true
+    # Detect if using DNF (supports --skip-broken) or pacman (does not)
+    if [[ "$install_cmd" == *"dnf"* ]]; then
+        log_info "Phase 1: Batch installation (DNF with --skip-broken)..."
+        $install_cmd -y --skip-broken $batch_list 2>&1 || true
+    else
+        # Pacman strategy: try batch, if fails parse errors and retry without problematic pkgs
+        log_info "Phase 1: Batch installation..."
+        local batch_output_file="/tmp/pacman_batch_$$.log"
+        local batch_exit_code=0
+        
+        # Run and show output in real-time, also capture to file for parsing
+        # Use set +e temporarily to capture exit code properly
+        set +e
+        $install_cmd $batch_list 2>&1 | tee "$batch_output_file"
+        batch_exit_code=${PIPESTATUS[0]}
+        set -e
+        
+        if [ $batch_exit_code -ne 0 ]; then
+            log_info "    Batch failed. Analyzing errors to identify problematic packages..."
+            
+            # Parse pacman errors to find problematic packages:
+            # - "error: target not found: <pkg>" -> package doesn't exist
+            # - "<pkg1> and <pkg2> are in conflict" -> conflict between packages
+            # - "error: failed to prepare transaction (could not satisfy dependencies)"
+            local problematic_pkgs=""
+            
+            # Extract "target not found" packages
+            local not_found=$(grep -oP "target not found: \K\S+" "$batch_output_file" || true)
+            if [ -n "$not_found" ]; then
+                problematic_pkgs="$not_found"
+                log_info "    Packages not found: $(echo $not_found | tr '\n' ' ')"
+            fi
+            
+            # Extract conflict packages (both sides of conflict)
+            local conflicts=$(grep -oP ":: \K\S+(?= and .* are in conflict)" "$batch_output_file" || true)
+            local conflicts2=$(grep -oP ":: \S+ and \K\S+(?= are in conflict)" "$batch_output_file" || true)
+            if [ -n "$conflicts" ] || [ -n "$conflicts2" ]; then
+                problematic_pkgs="$problematic_pkgs"$'\n'"$conflicts"$'\n'"$conflicts2"
+                log_info "    Conflicting packages detected: $(echo "$conflicts $conflicts2" | tr '\n' ' ')"
+            fi
+            
+            # Cleanup temp file
+            rm -f "$batch_output_file"
+            
+            # Remove problematic packages from batch and retry
+            if [ -n "$problematic_pkgs" ]; then
+                local clean_batch="$batch_list"
+                local bad_count=0
+                # Use process substitution to avoid subshell variable scope issue
+                while read -r bad_pkg; do
+                    [[ -z "$bad_pkg" ]] && continue
+                    # Remove package from list (word boundary match)
+                    clean_batch=$(echo "$clean_batch" | sed "s/\b${bad_pkg}\b//g")
+                    ((bad_count++)) || true
+                done <<< "$problematic_pkgs"
+                # Trim extra spaces
+                clean_batch=$(echo "$clean_batch" | tr -s ' ' | xargs)
+                
+                if [ -n "$clean_batch" ]; then
+                    local remaining_count=$(echo "$clean_batch" | wc -w)
+                    log_info "    Excluded $bad_count problematic packages. Retrying $remaining_count packages..."
+                    $install_cmd $clean_batch 2>&1 || true
+                fi
+            fi
+        else
+            # Batch succeeded, cleanup temp file
+            rm -f "$batch_output_file"
+        fi
+    fi
     
     # Phase 2: Check what's still missing and retry individually
     if [ -n "$check_cmd" ]; then
-        log_info "Phase 2: Verifying installation and retrying skipped packages..."
-        
         # Re-check installed packages
         local tmp_now_installed="/tmp/now_installed_$$.tmp"
         bash -c "$check_cmd" 2>/dev/null | sort -u > "$tmp_now_installed"
@@ -127,14 +194,25 @@ install_list() {
         local still_missing=$(comm -23 <(echo "$missing_list" | sort) "$tmp_now_installed")
         rm -f "$tmp_now_installed"
         
-        local still_count=$(echo "$still_missing" | grep -c . || echo 0)
+        # Use wc -l and trim whitespace to get a clean integer
+        local still_count=0
+        if [ -n "$still_missing" ]; then
+            still_count=$(echo "$still_missing" | wc -l | tr -d ' ')
+        fi
         
         if [ "$still_count" -gt 0 ]; then
-            log_info "    $still_count packages still need attention. Installing one-by-one..."
+            log_info "Phase 2: $still_count packages still missing. Installing one-by-one..."
             echo "$still_missing" | while read -r pkg; do
                 [[ -z "$pkg" ]] && continue
-                $install_cmd -y "$pkg" 2>&1 || log_error "Failed to install package: $pkg"
+                # DNF uses -y flag, pacman already has --noconfirm in install_cmd
+                if [[ "$install_cmd" == *"dnf"* ]]; then
+                    $install_cmd -y "$pkg" 2>&1 || log_error "Failed to install package: $pkg"
+                else
+                    $install_cmd "$pkg" 2>&1 || log_error "Failed to install package: $pkg"
+                fi
             done
+        else
+            log_success "Phase 2: All packages verified installed."
         fi
     fi
     
@@ -185,16 +263,21 @@ if [ "$DISTRO" == "arch" ]; then
              comm -23 <(sort /tmp/aur_full.txt) <(sort /tmp/installed_aur_check.tmp) > /tmp/aur_missing.txt
              
              if [ -s "/tmp/aur_missing.txt" ]; then
-                 log_info "Installing missing AUR packages..."
-                 # Try batch first
-                 if ! yay -S --needed --noconfirm - < /tmp/aur_missing.txt; then
-                     log_error "Batch AUR failed. Trying one-by-one."
+                 aur_count=$(wc -l < /tmp/aur_missing.txt)
+                 log_info "Installing $aur_count missing AUR packages..."
+                 
+                 # Convert file to space-separated list for yay
+                 aur_batch=$(tr '\n' ' ' < /tmp/aur_missing.txt)
+                 
+                 # Try batch first (yay accepts packages as arguments)
+                 if ! yay -S --needed --noconfirm $aur_batch 2>&1; then
+                     log_info "Batch AUR had issues. Trying one-by-one..."
                      while read -r pkg; do
-                         yay -S --needed --noconfirm "$pkg" || log_error "Failed AUR: $pkg"
+                         [[ -z "$pkg" ]] && continue
+                         yay -S --needed --noconfirm "$pkg" 2>&1 || log_error "Failed AUR: $pkg"
                      done < /tmp/aur_missing.txt
-                 else
-                     log_success "AUR packages updated."
                  fi
+                 log_success "AUR packages processed."
              else
                  log_success "All AUR packages already installed."
              fi
@@ -341,6 +424,14 @@ install_zsh_plugin() {
 }
 install_zsh_plugin "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
 install_zsh_plugin "https://github.com/zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+
+# Cargo packages (installed via cargo to avoid rust vs rustup conflicts)
+if command -v cargo &> /dev/null; then
+    if ! command -v cargo-install-update &> /dev/null; then
+        log_info "Installing cargo-update via cargo..."
+        cargo install cargo-update 2>/dev/null || log_warn "Failed to install cargo-update (optional)"
+    fi
+fi
 
 # Shell Change
 # FIX: Use absolute path for zsh - 'which' can return wrong paths in some environments

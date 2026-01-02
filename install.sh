@@ -40,6 +40,9 @@ detect_distro
 LOG_FILE=".install_${DISTRO}_$(date +%Y-%m-%d_%H-%M-%S).log"
 rm -f "$ERROR_LOG_TRACKER"
 
+# Track execution time
+START_TIME=$(date +%s)
+
 # Pre-Log Header
 {
     echo -e "${YELLOW}🧈 STARTING BUTTERYDOTFILES SETUP (${DISTRO^^})...${NC}"
@@ -83,6 +86,12 @@ show_summary() {
         echo " INSTALLATION SUMMARY"
         echo "===================================================================="
         
+        # Calculate elapsed time
+        END_TIME=$(date +%s)
+        ELAPSED=$((END_TIME - START_TIME))
+        ELAPSED_MIN=$((ELAPSED / 60))
+        ELAPSED_SEC=$((ELAPSED % 60))
+        
         if [ -s "$ERROR_LOG_TRACKER" ]; then
             echo -e "${RED}${BOLD}⚠️  ERRORS WERE DETECTED DURING INSTALLATION:${NC}"
             echo -e "${RED}"
@@ -98,6 +107,9 @@ show_summary() {
             echo -e "Enjoy your buttery smooth system! 🧈"
             echo -e "Full log available at: ${CYAN}$LOG_FILE${NC}"
         fi
+        
+        echo ""
+        echo -e "${CYAN}⏱️  Total execution time: ${ELAPSED_MIN}m ${ELAPSED_SEC}s${NC}"
     } 2>&1 | tee -a "$LOG_FILE"
 
     # Switch Shell if successful AND .zshrc exists
