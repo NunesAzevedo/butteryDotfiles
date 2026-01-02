@@ -1,0 +1,98 @@
+# ==============================================================================
+# TOPGRADE CONFIGURATION
+# Otimizado para Fedora + Arch (dual boot com /home compartilhado)
+# Desenvolvimento: Robótica, C++, Python
+# Localização: ~/.config/topgrade.toml
+# Referência: https://github.com/topgrade-rs/topgrade
+# ==============================================================================
+
+[misc]
+# Cachear credenciais sudo no início (evita prompts no meio da atualização)
+pre_sudo = true
+
+# Assumir "yes" para prompts (equivalente ao -y)
+assume_yes = true
+
+# Não perguntar para retry em caso de falha
+no_retry = false
+
+# Mostrar título no terminal
+set_title = true
+
+# Mostrar tempo em cada step
+display_time = true
+
+# ============================================
+# 🧹 LIMPEZA AUTOMÁTICA (após atualizações)
+# ============================================
+# Remove arquivos temporários e cache antigo
+cleanup = true
+
+# Ignorar falhas em passos específicos
+ignore_failures = ["containers"]
+
+# ==============================================================================
+# PÓS-COMANDOS - LIMPEZA (executados APÓS as atualizações)
+# Mantém as últimas 3 versões de kernels/pacotes
+# ==============================================================================
+[post_commands]
+# --- FEDORA ---
+# DNF já respeita installonly_limit=3 do /etc/dnf/dnf.conf para kernels
+"Fedora: DNF Autoremove" = "command -v dnf >/dev/null && sudo dnf autoremove -y || true"
+"Fedora: DNF Clean" = "command -v dnf >/dev/null && sudo dnf clean all || true"
+
+# --- ARCH ---
+# paccache -rk3 mantém as últimas 3 versões de cada pacote no cache
+"Arch: Pacman Cache (manter 3 versões)" = "command -v paccache >/dev/null && sudo paccache -rk3 || true"
+"Arch: Remover pacotes órfãos" = "command -v pacman >/dev/null && sudo pacman -Rns $(pacman -Qdtq) 2>/dev/null || true"
+
+# --- COMUM (ambas distros) ---
+"Flatpak: Remover runtimes não usados" = "flatpak uninstall --unused -y 2>/dev/null || true"
+"Journal: Limpar logs >7 dias" = "sudo journalctl --vacuum-time=7d 2>/dev/null || true"
+
+# ==============================================================================
+# LINUX/FEDORA/ARCH
+# ==============================================================================
+[linux]
+# Arch: usar yay como AUR helper
+arch_package_manager = "yay"
+
+# Argumentos para yay (não atualizar pacotes -devel)
+yay_arguments = "--nodevel"
+
+# ==============================================================================
+# FLATPAK
+# ==============================================================================
+[flatpak]
+use_sudo = true
+
+# ==============================================================================
+# FIRMWARE
+# ==============================================================================
+[firmware]
+upgrade = true
+
+# ==============================================================================
+# GIT REPOSITORIES
+# ==============================================================================
+[git]
+max_concurrency = 5
+arguments = "--rebase --autostash"
+
+# ==============================================================================
+# CONTAINERS (Docker)
+# ==============================================================================
+[containers]
+runtime = "docker"
+
+# ==============================================================================
+# NPM
+# ==============================================================================
+[npm]
+use_sudo = false
+
+# ==============================================================================
+# VIM / NEOVIM
+# ==============================================================================
+[vim]
+force_plug_update = true
