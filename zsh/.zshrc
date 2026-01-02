@@ -81,10 +81,11 @@ plugins=(
   history
   colored-man-pages
   command-not-found
-  zsh-autosuggestions
-  zsh-syntax-highlighting
-  docker
-  fzf
+  ## Plugins interessantes,adicionar ele depois
+  # zsh-autosuggestions
+  # zsh-syntax-highlighting
+  # docker
+  # fzf
 )
 
 source $ZSH/oh-my-zsh.sh
