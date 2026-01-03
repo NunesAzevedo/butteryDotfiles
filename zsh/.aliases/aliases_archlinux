@@ -153,7 +153,7 @@ catppuccin='~/.oh_my_posh_themes/catppuccin.omp.json'
 
 # Inicia o Oh my posh
 # eval "$(oh-my-posh init bash --config $craver)" # For bash
-eval "$(oh-my-posh init zsh --config $craver)"  # For zsh
+# eval "$(oh-my-posh init zsh --config $craver)"  # For zsh
 # eval "uwufetch | cowsay -n -f small"
 
 
