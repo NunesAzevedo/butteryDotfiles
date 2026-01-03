@@ -5,6 +5,9 @@
     autocrlf = input
     # Ignora mudanças de permissão (chmod) em partições NTFS
     fileMode = false
+	preloadindex = true
+	fscache = true
+	fsmonitor = true
 
 [init]
     # O padrão moderno
@@ -39,3 +42,10 @@
     d = diff
     unstage = reset HEAD --
     last = log -1 HEAD
+[maintenance]
+	repo = /home/manteiguinha/butteryDotfiles
+	auto = true
+	strategy = incremental
+[user]
+	name = NunesAzevedo
+	email = pnazevedo1@gmail.com
