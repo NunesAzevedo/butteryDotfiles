@@ -90,4 +90,28 @@ if check_and_update "$GRUB_CONF_DEST" "$GRUB_CONF_SRC" "GRUB Config"; then
     fi
 fi
 
+# ==============================================================================
+# 4. rEFInd BOOT MANAGER CONFIGURATION
+# ==============================================================================
+REFIND_SRC_DIR="$COMMON_SYS_DIR/boot/efi/EFI/refind"
+REFIND_DEST_DIR="/boot/efi/EFI/refind"
+
+if [ -d "$REFIND_DEST_DIR" ]; then
+    log_info "rEFInd detected. Applying configuration..."
+    
+    # Update refind.conf
+    if check_and_update "$REFIND_DEST_DIR/refind.conf" "$REFIND_SRC_DIR/refind.conf" "rEFInd Config"; then
+        log_success "rEFInd configuration updated."
+    fi
+    
+    # Sync themes directory
+    if [ -d "$REFIND_SRC_DIR/themes" ]; then
+        log_info "Syncing rEFInd themes..."
+        sudo cp -r "$REFIND_SRC_DIR/themes/"* "$REFIND_DEST_DIR/themes/" 2>/dev/null || true
+        log_success "rEFInd themes synced."
+    fi
+else
+    log_info "rEFInd not installed at $REFIND_DEST_DIR. Skipping."
+fi
+
 log_success "Fedora system configuration finished."
