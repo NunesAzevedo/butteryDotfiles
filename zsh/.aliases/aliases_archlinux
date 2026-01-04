@@ -16,6 +16,8 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/
 # 4. Envia pro GitHub
 alias updot='cd ~/butteryDotfiles/ && ./backup_packages.sh && git add . && git commit -m "Update: Routine maintenance $(date +%F)" && git push && cd -'
 
+# Iniciar Hyprland 
+alias hy='start-hyprland'
 
 # Atalhos do terminal
 alias u='topgrade -y'
