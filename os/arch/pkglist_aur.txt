@@ -1,5 +1,7 @@
 afetch
+neovim-remote
 nerdfetch
 topgrade-bin
 visual-studio-code-bin
 yay
+zsh-theme-powerlevel10k-git
