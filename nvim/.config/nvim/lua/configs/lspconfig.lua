@@ -10,6 +10,7 @@ local servers = {
   "ruff",
   "ast-grep",
   "asm-lsp",
+  "lua",
 }
 vim.lsp.enable(servers)
 
