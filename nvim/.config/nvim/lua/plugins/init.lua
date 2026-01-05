@@ -13,6 +13,16 @@ return {
     end,
   },
 
+  {
+"lervag/vimtex",
+  lazy = false,     
+    init = function()
+    -- Definições do VimTeX (Vimscript dentro de Lua)
+    vim.g.vimtex_view_method = 'zathura'
+    vim.g.vimtex_compiler_method = 'latexmk'
+  end
+  },
+
   -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
 
