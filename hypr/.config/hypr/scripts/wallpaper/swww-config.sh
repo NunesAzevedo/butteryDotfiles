@@ -21,7 +21,7 @@ export DEFAULT_WALLPAPER="$WALLPAPER_DIR/doom_guy_e_isabelle.jpg"
 
 # --- 3. Transition Settings ---
 # Customize the animation when switching wallpapers
-TRANSITION_TYPE="fade"      # simple, fade, left, right, top, bottom, wipe, wave, grow, center, outer, random
+TRANSITION_TYPE="wipe"      # simple, fade, left, right, top, bottom, wipe, wave, grow, center, outer, random
 TRANSITION_FPS="60"         # Frames per second
 TRANSITION_DURATION="1.0"   # Duration in seconds (e.g., 0.5, 1, 2)
 
