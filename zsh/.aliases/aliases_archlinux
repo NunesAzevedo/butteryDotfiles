@@ -49,7 +49,7 @@ alias copy='wl-copy 2>/dev/null || xclip -selection clipboard 2>/dev/null || pbc
 
 # Aliases for studies
 alias x='xournalpp'
-alias xtemplate='cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp template.xopp && cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp rascunho.xopp'
+alias xtemplate='cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp notes.xopp && cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp rascunho.xopp'
 
 # Aliases relativos à USP
 alias vpn_usp='sh ~/src/scripts/vpn_usp.sh'
