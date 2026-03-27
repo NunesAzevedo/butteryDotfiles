@@ -4,7 +4,7 @@
 # Forces the default wallpaper and resets the rotation index to 0.
 # ==============================================================================
 
-source "$(dirname "$0")/swww-config.sh"
+source "$(dirname "$0")/awww-config.sh"
 
 apply_wallpaper "$DEFAULT_WALLPAPER"
 

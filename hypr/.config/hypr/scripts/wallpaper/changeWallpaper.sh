@@ -6,7 +6,7 @@
 # ==============================================================================
 
 # Import core configuration (relative path)
-source "$(dirname "$0")/swww-config.sh"
+source "$(dirname "$0")/awww-config.sh"
 
 # 1. Build File List
 # Uses 'sort -V' to handle numbered files naturally (2 comes before 10)

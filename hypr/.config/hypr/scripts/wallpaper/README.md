@@ -1,12 +1,12 @@
 # Hyprland Wallpaper Manager
 
-A modular, centralized wallpaper management system using `swww`. 
+A modular, centralized wallpaper management system using `awww`. 
 Designed to be portable, state-persistent, and redundant-aware.
 
 ## Directory Structure & Architecture
 
 This system uses a **Hub-and-Spoke** architecture:
-* **Hub (`swww-config.sh`):** Centralizes all paths, variables, and the `swww` execution logic. It detects its own location to resolve paths dynamically.
+* **Hub (`awww-config.sh`):** Centralizes all paths, variables, and the `awww` execution logic. It detects its own location to resolve paths dynamically.
 * **Satellites (`change`, `load`, `reset`):** Lightweight scripts that source the Hub to perform specific actions.
 
 ```text
@@ -17,7 +17,7 @@ This system uses a **Hub-and-Spoke** architecture:
     └── ...
 └── scripts/
     └── wallpaper/
-        ├── swww-config.sh   # The "Brain"
+        ├── awww-config.sh   # The "Brain"
         ├── change...sh      # Rotates images
         ├── load...sh        # Restores state on boot
         └── reset...sh       # Resets index to 0
@@ -41,7 +41,7 @@ Add the following to your hyprland.conf:
 ```Ini, TOML
 
 # Initialize wallpaper daemon and restore previous state
-exec-once = swww-daemon
+exec-once = awww-daemon
 exec-once = ~/.config/hypr/scripts/wallpaper/load-wallpaper.sh
 
 # Keybinding to cycle wallpapers

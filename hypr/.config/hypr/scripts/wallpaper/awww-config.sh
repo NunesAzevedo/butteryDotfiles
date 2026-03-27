@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# SWWW CONFIGURATION & UTILS
-# Centralized configuration for Hyprland wallpaper management using swww.
+# AWWW CONFIGURATION & UTILS
+# Centralized configuration for Hyprland wallpaper management using awww.
 # ==============================================================================
 
 # --- 1. Dynamic Path Detection ---
-# Assumes the structure: ~/.config/hypr/scripts/swww-config.sh
+# Assumes the structure: ~/.config/hypr/scripts/awww-config.sh
 # So, the parent directory is the main hypr config folder.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 HYPR_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
@@ -32,7 +32,7 @@ apply_wallpaper() {
     local target_wallpaper="$1"
 
     # Define common arguments to avoid repetition
-    local swww_args=(
+    local awww_args=(
         --transition-type "$TRANSITION_TYPE"
         --transition-fps "$TRANSITION_FPS"
         --transition-duration "$TRANSITION_DURATION"
@@ -41,7 +41,7 @@ apply_wallpaper() {
     # Check if the target file actually exists
     if [ -f "$target_wallpaper" ]; then
         echo ":: Setting wallpaper: $target_wallpaper"
-        swww img "$target_wallpaper" "${swww_args[@]}"
+        awww img "$target_wallpaper" "${awww_args[@]}"
         
         # Save the successful wallpaper path for next session
         echo "$target_wallpaper" > "$LAST_WALLPAPER_FILE"
@@ -52,7 +52,7 @@ apply_wallpaper() {
 
         # Check if default exists to avoid infinite errors
         if [ -f "$DEFAULT_WALLPAPER" ]; then
-             swww img "$DEFAULT_WALLPAPER" "${swww_args[@]}"
+             awww img "$DEFAULT_WALLPAPER" "${awww_args[@]}"
              # Optionally save the default as the current one
              echo "$DEFAULT_WALLPAPER" > "$LAST_WALLPAPER_FILE"
         else

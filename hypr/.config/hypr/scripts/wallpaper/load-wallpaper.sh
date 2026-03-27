@@ -4,7 +4,7 @@
 # Restores the previously used wallpaper on system startup.
 # ==============================================================================
 
-source "$(dirname "$0")/swww-config.sh"
+source "$(dirname "$0")/awww-config.sh"
 
 # Attempt to restore state from file
 if [ -f "$LAST_WALLPAPER_FILE" ]; then
