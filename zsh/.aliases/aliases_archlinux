@@ -158,4 +158,5 @@ catppuccin='~/.oh_my_posh_themes/catppuccin.omp.json'
 # eval "$(oh-my-posh init zsh --config $craver)"  # For zsh
 # eval "uwufetch | cowsay -n -f small"
 
-
+# Abre o KDE
+alias kde='dbus-run-session startplasma-wayland'
