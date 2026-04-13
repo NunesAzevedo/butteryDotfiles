@@ -1,8 +1,8 @@
 local options = {
   formatters_by_ft = {
     lua = { "stylua" },
-    css = { "prettier" },
-    html = { "prettier" },
+    css = { "css-lsp" },
+    html = { "superhtml" },
     c = { "clang-format" },
     cpp = { "clang-format" },
     rust = { "ast-grep" },
