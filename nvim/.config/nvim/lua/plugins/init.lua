@@ -30,6 +30,23 @@ return {
     end,
   },
 
+  -- Glow
+  {
+    "ellisonleao/glow.nvim",
+    config = true,
+    cmd = "Glow",
+  },
+
+  -- Render Markdown
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.icons" }, -- ou nvim-web-devicons
+    ft = { "markdown" },
+    config = function()
+      require("render-markdown").setup {}
+    end,
+  },
+
   -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
 
@@ -46,6 +63,7 @@ return {
         "bibtex",
         "c",
         "cpp",
+        "cmakelang",
         "python",
         "markdown",
       },

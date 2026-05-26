@@ -5,6 +5,7 @@ local options = {
     html = { "superhtml" },
     c = { "clang-format" },
     cpp = { "clang-format" },
+    --    cmake = { "cmake_format" },
     rust = { "ast-grep" },
     python = { "black" },
     java = { "ast-grep" },

@@ -5,6 +5,7 @@ local servers = {
   "html",
   "cssls",
   "clangd",
+  "neocmakelsp",
   "rust-analyzer",
   "eslint-lsp",
   "ruff",

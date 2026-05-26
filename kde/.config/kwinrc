@@ -9,9 +9,6 @@ Rows=1
 [Plugins]
 desktopchangeosdEnabled=true
 
-[Tiling]
-padding=4
-
 [Tiling][0331f847-4f61-5a66-9270-1dffb6529aba]
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
@@ -21,6 +18,14 @@ tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"wi
 [Tiling][40f613be-adc0-45a8-89db-d6db2fe984b6][bfa63a78-4ee1-4575-99ad-679dc6a411e4]
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
+[Tiling][40f613be-adc0-45a8-89db-d6db2fe984b6][c0f5c919-cd45-42a4-b1fa-c4b2e7710fe6]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][40f613be-adc0-45a8-89db-d6db2fe984b6][d7a84591-76ec-4c4e-92b9-5d4a7f7348a9]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
 [Tiling][51f83fda-6c6c-5291-a7d5-fba41b97bb20]
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
@@ -28,6 +33,14 @@ tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"wi
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
 [Tiling][88327bd8-6de6-4492-8812-1d30d9b0e0ba][bfa63a78-4ee1-4575-99ad-679dc6a411e4]
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][88327bd8-6de6-4492-8812-1d30d9b0e0ba][c0f5c919-cd45-42a4-b1fa-c4b2e7710fe6]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][88327bd8-6de6-4492-8812-1d30d9b0e0ba][d7a84591-76ec-4c4e-92b9-5d4a7f7348a9]
+padding=4
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
 [Tiling][9320e4be-b0c3-5584-87d6-519fe84dfe25]
@@ -55,4 +68,7 @@ tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"wi
 RollOverDesktops=true
 
 [Xwayland]
-Scale=1.25
+Scale=1
+
+[org.kde.kdecoration2]
+library=org.kde.kwin.aurorae.v2
