@@ -33,7 +33,7 @@ alias ..='cd -'
 alias mk='mkdir -pv'
 alias ff='fastfetch'
 alias n='nvim'
-alias d='(dolphin . &) && disown'
+alias d='(thunar . &) && disown'
 alias sp='sudo pacman'
 alias spi='sudo pacman -S'
 alias spr='sudo pacman -Rns'
@@ -47,6 +47,7 @@ alias nconfig='cd ~/.config/nvim/ && $EDITOR . && cd -'
 alias lz='lazygit'
 alias copy='wl-copy 2>/dev/null || xclip -selection clipboard 2>/dev/null || pbcopy 2>/dev/null'
 alias nn='nvim ~/.config/nvim -c "cd %"'
+alias emacs="emacs -nw"
 
 # Aliases for studies
 alias x='xournalpp'
@@ -100,7 +101,7 @@ alias md='make debug'
 
 # Atalhos typst
 alias ty='typst compile'
-alias tyTemplate='cp -r ~/src/estudos/languages/typst/tuturial_of_official_documentation/template/personal_template/ .'
+alias tyTemplate='cp -r ~/src/studies/languages/typst/tuturial_of_official_documentation/template/personal_template/ .'
 
 # Atalhos para C/C++ (GCC/G++)
 alias a='./a.out'

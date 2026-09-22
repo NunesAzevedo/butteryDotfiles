@@ -37,7 +37,7 @@ alias lz='lazygit'
 
 # Aliases for studies
 alias x='xournalpp'
-alias xtemplate='cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp template.xopp && cp ~/estudos/template_xournalpp.xopp . && mv template_xournalpp.xopp rascunho.xopp'
+alias xtemplate='cp ~/studies/template_xournalpp.xopp . && mv template_xournalpp.xopp template.xopp && cp ~/studies/template_xournalpp.xopp . && mv template_xournalpp.xopp rascunho.xopp'
 
 # Aliases relativos à USP
 alias vpn_usp='sh ~/src/scripts/vpn_usp.sh'
@@ -50,9 +50,9 @@ alias SSLGameController="cd ~/src/warthog/3rdparty/ssl-game-controller/ && make 
 alias grSim='grSim -platform xcb' 
 alias WREye='cd ~/src/warthog/app-wreye/bin/ && ./WREye -platform xcb'
 alias WRStation-new='cd ~/src/warthog/app-wrstation-new/bin/ && ./WRStation'
+alias vimba="cd /opt/Vimba/bin/ && ./VimbaXViewer -platform xcb"
 #alias =' -platform xcb'
-#alias =' -platform xcb'
-
+alias cmakevision="cmake .. -DCMAKE_BUILD_TYPE=release -DUSE_GIGE=true"
 
 
 
@@ -103,7 +103,7 @@ alias md='make debug'
 
 # Atalhos typst
 alias ty='typst compile'
-alias tyTemplate='cp -r ~/src/estudos/languages/typst/tuturial_of_official_documentation/template/personal_template/ .'
+alias tyTemplate='cp -r ~/src/studies/languages/typst/tuturial_of_official_documentation/template/personal_template/ .'
 
 ################################
 # Atalhos para C/C++ (GCC/G++) #
