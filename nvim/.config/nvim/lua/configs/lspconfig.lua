@@ -13,6 +13,17 @@ local servers = {
   "asm-lsp",
   "lua",
 }
+
+vim.lsp.config.clangd = vim.tbl_deep_extend("force", vim.lsp.config.clangd or {}, {
+  cmd = {
+    "clangd",
+    "--background-index",
+    "--compile-commands-dir=.", 
+    "--header-insertion=iwyu",
+  }
+})
+
+
 vim.lsp.enable(servers)
 
 -- read :h vim.lsp.config for changing options of lsp servers
