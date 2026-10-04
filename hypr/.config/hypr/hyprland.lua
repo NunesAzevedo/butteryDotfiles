@@ -61,6 +61,11 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("~/.config/hypr/scripts/wallpaper/load-wallpaper.sh")
 end)
 
+-- ### Devices configs ###
+-- Tablet Configs
+  hl.exec_cmd("~/.config/hypr/scripts/penTablets/tabletFocus.sh")
+
+
 -------------------------------
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
@@ -253,6 +258,7 @@ hl.config({
     misc = {
         force_default_wallpaper = 0,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = true, -- If true disables the random hyprland logo / anime girl background. :(
+        vrr = 2,
     },
 })
 
@@ -323,10 +329,6 @@ hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("cliphist list | wofi --dmenu
 hl.bind(mainMod .. " + SHIFT + DELETE", hl.dsp.exec_cmd("reboot"))
 hl.bind(mainMod .. " + SHIFT + BACKSPACE", hl.dsp.exec_cmd("shutdown -P now"))
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("blueman-manager"))
-
--- Brightness controls
--- hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +10%"))
--- hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 10%-"))
 
 -- Open and close waybar
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("killall waybar || waybar"))
