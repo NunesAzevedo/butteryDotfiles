@@ -80,7 +80,7 @@ alias gc='git commit'
 alias gp='git push'
 alias gca='git commit -m a'
 alias gfdc='git add . && git commit -m a && git push'
-alias gf='git fetch'
+alias gf='git fetch --all'
 alias gst='git status'
 alias gpull='git pull'
 alias greb='git rebase'
@@ -93,7 +93,7 @@ alias gClonaTodosOsRepositoriosRemotos='sh ~/.scripts/clonaTodosOsRepositorios.s
 
 # Atalhos Makefile
 #export MAKEFLAGS="-j$(($(nproc) - 4))"
-alias m='make -j$(($(nproc) - 8))'
+alias m='make -j4'
 alias ma='make all'
 alias mr='make run'
 alias mc='make clean'
