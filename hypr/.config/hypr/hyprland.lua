@@ -268,7 +268,9 @@ hl.config({
         kb_model   = "abnt2",
         kb_options = "",
         kb_rules   = "",
-
+        
+        numlock_by_default = true,
+        
         follow_mouse = 1,
 
         sensitivity = 0, -- -1.0 - 1.0, 0 means no modification.
@@ -330,7 +332,7 @@ hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("blueman-manager"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("killall waybar || waybar"))
 
 -- Screenshot
-hl.bind(" Print", hl.dsp.exec_cmd('grim -g "$(slurp)" &')) 
+hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" &')) 
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
