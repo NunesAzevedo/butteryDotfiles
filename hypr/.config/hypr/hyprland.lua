@@ -25,8 +25,8 @@ setup_monitors(hl)
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "dolphin"
--- local menu        = "hyprlauncher"
 local menu = "wofi --show drun --allow-images"
+local menuSec = "hyprlauncher"
 local browser = "firefox"
 local browserSec = "flatpak run app.zen_browser.zen" -- Zen Browser
 
@@ -307,6 +307,7 @@ hl.bind(mainMod .. " + SHIFT + X", hl.dsp.exec_cmd("command -v hyprshutdown >/de
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menuSec))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
