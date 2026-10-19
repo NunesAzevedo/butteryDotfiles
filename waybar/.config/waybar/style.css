@@ -11,33 +11,12 @@
 
 /* 
 ========================================================
-ESTILO 1: MÓDULOS FLUTUANTES (PÍLULAS)
-Para usar este, descomente o bloco abaixo e comente 
-o bloco do ESTILO 2.
-========================================================
-*/
-/*
-window#waybar {
-    background: transparent;
-}
-
-.modules-left, .modules-center, .modules-right {
-    background-color: rgba(40, 40, 40, 0.9);
-    border-radius: 16px;
-    border: 1px solid rgba(235, 219, 178, 0.1);
-    padding: 4px 8px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
-}
-*/
-
-/* 
-========================================================
-ESTILO 2: BARRA CONTÍNUA - ATIVO
+BARRA CONTÍNUA (ESTILO ATIVO)
 ========================================================
 */
 window#waybar {
-    background-color: rgba(40, 40, 40, 0.9); /* Fundo escuro Gruvbox (bg0) */
-    border-bottom: 2px solid rgba(235, 219, 178, 0.1);
+    background-color: rgba(40, 40, 40, 0.95); /* bg0 */
+    border-bottom: 1px solid rgba(235, 219, 178, 0.1); /* Borda mais fina */
 }
 
 .modules-left, .modules-center, .modules-right {
@@ -47,88 +26,116 @@ window#waybar {
 
 /* 
 ========================================================
-WORKSPACES E RELÓGIO
+WORKSPACES
 ========================================================
 */
-
 #workspaces button {
-    padding: 0 8px;
-    color: #a89984; /* Cinza Gruvbox para workspaces inativas */
-    border-radius: 15px;
+    padding: 0 10px; /* Zerei o preenchimento vertical */
+    margin: 2px 2px; /* Margem vertical reduzida */
+    color: #a89984;
+    border-radius: 12px;
     transition: all 0.3s ease;
 }
 
 #workspaces button:hover {
     background-color: rgba(235, 219, 178, 0.1);
-    color: #ebdbb2; /* Creme Gruvbox no hover */
+    color: #ebdbb2;
 }
 
 #workspaces button.active {
-    color: #fabd2f; /* Amarelo Gruvbox para a workspace ativa */
-    background-color: rgba(235, 219, 178, 0.08);
+    color: #fabd2f;
+    background-color: rgba(250, 189, 47, 0.15);
+}
+
+/* 
+========================================================
+MÓDULOS DE TELEMETRIA (Efeito Pílula Emagrecido)
+========================================================
+*/
+/* Fundo sutil para todos os itens da direita e o relógio central */
+#clock, #tray, #cpu, #memory, #temperature, #pulseaudio, #network, #power-profiles-daemon, #battery {
+    background-color: #3c3836; 
+    border-radius: 10px; /* Bordas um pouco mais fechadas */
+    padding: 0 10px;     /* Zerei o preenchimento vertical para afinar a barra */
+    margin: 3px 4px;     /* Margem reduzida */
 }
 
 #clock {
-    color: #ebdbb2; /* Creme Gruvbox */
-    padding: 0 12px;
+    color: #ebdbb2; 
+    padding: 0 14px;
 }
 
 /* 
 ========================================================
-TELEMETRIAS (ESPAÇAMENTO E CORES GRUVBOX)
+O TRUQUE DA BANDEJA E REDE
 ========================================================
 */
-
-#tray, #cpu, #memory, #temperature, #pulseaudio, #network, #power-profiles-daemon, #battery {
-    padding: 0 8px;
-    margin: 0 4px;
-}
-
-/* Colando a bandeja e a rede para parecerem um módulo só */
 #tray {
-    padding-right: 4px; /* Apenas um respiro pequeno depois do ícone */
+    padding-right: 6px;
     margin-right: 0;
+    border-radius: 10px 0 0 10px;
 }
 
 #network {
-    padding-left: 0;
+    padding-left: 2px;
     margin-left: 0;
+    border-radius: 0 10px 10px 0;
 }
-
-#cpu { color: #fe8019; } /* Laranja Gruvbox */
-#memory { color: #d3869b; } /* Roxo Gruvbox */
-#pulseaudio { color: #83a598; } /* Azul Gruvbox */
-#network { color: #ebdbb2; } /* Creme Gruvbox */
-#temperature { color: #8ec07c; } /* Aqua Gruvbox */
-#battery { color: #b8bb26; } /* Verde Gruvbox */
 
 /* 
 ========================================================
-ALERTAS E STATUS CRÍTICOS (Gruvbox Red)
+CORES GRUVBOX
 ========================================================
 */
+#cpu { color: #fe8019; } 
+#memory { color: #d3869b; } 
+#pulseaudio { color: #83a598; } 
+#network { color: #ebdbb2; } 
+#temperature { color: #8ec07c; } 
+#battery { color: #b8bb26; } 
+
+/* 
+========================================================
+BOTÃO DE ENERGIA & ALERTAS CRÍTICOS
+========================================================
+*/
+#custom-power {
+    color: #fb4934;
+    padding: 0 12px;
+    margin: 3px 4px 3px 8px;
+    background-color: transparent;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+#custom-power:hover {
+    text-shadow: 0 0 5px rgba(251, 73, 52, 0.5);
+}
 
 #battery.critical:not(.charging),
 #temperature.critical,
 #network.disconnected {
-    color: #fb4934; /* Vermelho vibrante Gruvbox */
+    color: #fb4934;
+    background-color: rgba(251, 73, 52, 0.1);
 }
 
-#custom-power {
-    color: #fb4934; /* Vermelho Gruvbox */
-    padding-left: 12px;
-    padding-right: 5px;
+#power-profiles-daemon.performance { color: #fb4934; }
+#power-profiles-daemon.balanced { color: #83a598; }
+#power-profiles-daemon.power-saver { color: #b8bb26; }
+
+/* 
+========================================================
+TOOLTIPS E CALENDÁRIO
+========================================================
+*/
+tooltip {
+    background-color: rgba(40, 40, 40, 0.95);
+    border: 1px solid rgba(235, 219, 178, 0.15);
+    border-radius: 14px;
+    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.6);
 }
 
-/* Perfis de Energia */
-#power-profiles-daemon.performance {
-    color: #fb4934; /* Vermelho Gruvbox */
-}
-
-#power-profiles-daemon.balanced {
-    color: #83a598; /* Azul Gruvbox */
-}
-
-#power-profiles-daemon.power-saver {
-    color: #b8bb26; /* Verde Gruvbox */
+tooltip label {
+    color: #ebdbb2;
+    padding: 10px 14px;
 }

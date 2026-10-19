@@ -1,0 +1,30 @@
+{
+    "clock": {
+        // FORMATO APPLE: Sem ícones, ordem natural de leitura e espaçamento duplo.
+        // Exemplo: seg 19 out  00:21
+        "format": "{:%a %d %b  %H:%M}",
+        
+        // VARIÁVEL DE TAMANHO DO CALENDÁRIO: Altere o "size='16pt'"
+        // Aumente (ex: 18pt, 20pt) ou diminua (ex: 14pt) conforme a sua preferência visual.
+        "tooltip-format": "<span font_family='monospace' size='16pt'>{calendar}</span>",
+        
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "on-scroll": 1,
+            "format": {
+                "months": "<span color='#ebdbb2' font_weight='bold'>{}</span>",
+                "days": "<span color='#ebdbb2'>{}</span>",
+                "weekdays": "<span color='#d3869b' font_weight='bold'>{}</span>",
+                "today": "<span bgcolor='#fabd2f' color='#282828' font_weight='bold'>{}</span>"
+            }
+        },
+        "actions": {
+            "on-click-right": "mode",
+            "on-click-forward": "tz_up",
+            "on-click-backward": "tz_down",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+        }
+    }
+}
