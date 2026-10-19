@@ -20,7 +20,7 @@ return function(hl)
 	    output   = "HDMI-A-1",
 	    mode     = "preferred",
 	    position = "auto",
-	    scale    = "auto",
+	    scale    = "1.25",
 	})
 
   -- Old Config
