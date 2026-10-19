@@ -9,21 +9,34 @@
     padding: 0;
 }
 
-/* 
-========================================================
-BARRA FLUTUANTE ARREDONDADA (ESPESSURA BALANCEADA)
-========================================================
-*/
+/* ======================================================== */
+/* ESTILO 1: BARRA TRANSPARENTE (PÍLULAS FLUTUANTES) */
+/* ======================================================== */
+
 window#waybar {
-    background-color: rgba(40, 40, 40, 0.95); /* bg0 */
+    background-color: transparent;
+}
+
+.modules-left, .modules-center, .modules-right {
+    background-color: rgba(40, 40, 40, 0.95);
     border: 1px solid rgba(235, 219, 178, 0.15);
     border-radius: 16px;
 }
 
-.modules-left, .modules-center, .modules-right {
-    background: transparent;
-    border: none;
-}
+/* ======================================================== */
+/* ESTILO 2: BARRA CONTÍNUA (ESTILO ATIVO ATUALMENTE) */
+/* ======================================================== */
+
+/* window#waybar { */
+/*     background-color: rgba(40, 40, 40, 0.95); */
+/*     border: 1px solid rgba(235, 219, 178, 0.15); */
+/*     border-radius: 16px; */
+/* } */
+/**/
+/* .modules-left, .modules-center, .modules-right { */
+/*     background: transparent; */
+/*     border: none; */
+/* } */
 
 /* 
 ========================================================
