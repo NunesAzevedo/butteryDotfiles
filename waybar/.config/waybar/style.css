@@ -1,6 +1,6 @@
 * {
     font-family: "FontAwesome", "Roboto", sans-serif;
-    font-size: 13px; /* Meio-termo perfeito para a fonte */
+    font-size: 13px;
     font-weight: 700;
     border: none;
     border-radius: 0;
@@ -10,7 +10,7 @@
 }
 
 /* ======================================================== */
-/* ESTILO 1: BARRA TRANSPARENTE (PÍLULAS FLUTUANTES) */
+/* ESTILO 1: BARRA TRANSPARENTE */
 /* ======================================================== */
 
 window#waybar {
@@ -28,7 +28,7 @@ window#waybar {
 /* ======================================================== */
 
 /* window#waybar { */
-/*     background-color: rgba(40, 40, 40, 0.95); */
+/*     background-color: rgba(40, 40, 40, 0.95);  */
 /*     border: 1px solid rgba(235, 219, 178, 0.15); */
 /*     border-radius: 16px; */
 /* } */
@@ -44,8 +44,8 @@ WORKSPACES
 ========================================================
 */
 #workspaces button {
-    padding: 2px 10px; /* Devolvido o respiro interno */
-    margin: 2px 2px;   /* Devolvido o respiro externo */
+    padding: 2px 10px; 
+    margin: 2px 2px;   
     color: #a89984;
     border-radius: 12px;
     transition: all 0.3s ease;
@@ -63,14 +63,13 @@ WORKSPACES
 
 /* 
 ========================================================
-MÓDULOS DE TELEMETRIA
+MÓDULOS DE TELEMETRIA (SEM PÍLULAS DE FUNDO)
 ========================================================
 */
 #clock, #tray, #cpu, #memory, #temperature, #pulseaudio, #network, #power-profiles-daemon, #battery {
-    background-color: #3c3836; 
-    border-radius: 10px;
-    padding: 2px 10px; /* Devolvido o respiro interno */
-    margin: 2px 4px;   /* Afastamento elegante do teto e chão da barra */
+    background-color: transparent; /* Removido o fundo #3c3836 */
+    padding: 2px 8px; /* Ajuste no respiro horizontal */
+    margin: 2px 4px;   
 }
 
 #clock {
@@ -78,21 +77,15 @@ MÓDULOS DE TELEMETRIA
     padding: 2px 14px;
 }
 
-/* 
-========================================================
-O TRUQUE DA BANDEJA E REDE
-========================================================
-*/
+/* Bandeja e rede apenas com espaçamento simples agora */
 #tray {
-    padding-right: 6px;
+    padding-right: 2px;
     margin-right: 0;
-    border-radius: 10px 0 0 10px;
 }
 
 #network {
     padding-left: 2px;
     margin-left: 0;
-    border-radius: 0 10px 10px 0;
 }
 
 /* 
@@ -117,7 +110,7 @@ BOTÃO DE ENERGIA & ALERTAS CRÍTICOS
     padding: 2px 12px;
     margin: 2px 4px 2px 8px;
     background-color: transparent;
-    font-size: 15px; /* Levemente maior que os textos */
+    font-size: 15px; 
     transition: all 0.2s ease;
 }
 
@@ -125,11 +118,13 @@ BOTÃO DE ENERGIA & ALERTAS CRÍTICOS
     text-shadow: 0 0 5px rgba(251, 73, 52, 0.5);
 }
 
+/* Mantemos o fundo avermelhado APENAS para os alertas de erro */
 #battery.critical:not(.charging),
 #temperature.critical,
 #network.disconnected {
     color: #fb4934;
-    background-color: rgba(251, 73, 52, 0.1);
+    background-color: rgba(251, 73, 52, 0.15); 
+    border-radius: 10px;
 }
 
 #power-profiles-daemon.performance { color: #fb4934; }
