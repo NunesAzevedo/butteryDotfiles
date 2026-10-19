@@ -3,11 +3,9 @@
         // FORMATO APPLE: Sem ícones, ordem natural de leitura e espaçamento duplo.
         // Exemplo: seg 19 out  00:21
         "format": "{:%a %d %b  %H:%M}",
-        
         // VARIÁVEL DE TAMANHO DO CALENDÁRIO: Altere o "size='16pt'"
         // Aumente (ex: 18pt, 20pt) ou diminua (ex: 14pt) conforme a sua preferência visual.
         "tooltip-format": "<span font_family='monospace' size='16pt'>{calendar}</span>",
-        
         "calendar": {
             "mode": "month",
             "mode-mon-col": 3,
@@ -21,10 +19,9 @@
         },
         "actions": {
             "on-click-right": "mode",
-            "on-click-forward": "tz_up",
-            "on-click-backward": "tz_down",
             "on-scroll-up": "shift_up",
             "on-scroll-down": "shift_down"
-        }
+        },
+        "on-click": "alacritty -e calcurse"
     }
 }
