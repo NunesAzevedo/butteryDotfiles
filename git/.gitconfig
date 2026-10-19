@@ -49,3 +49,7 @@
 [user]
 	name = NunesAzevedo
 	email = pnazevedo1@gmail.com
+[merge]
+	conflictStyle = zdiff3
+[rerere]
+	enabled = true
