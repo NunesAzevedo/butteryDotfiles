@@ -13,13 +13,14 @@
         "clock"
     ],
     "modules-right": [
+        "tray",
         "cpu",
         "memory",
         "temperature",
         "pulseaudio",
         "network",
+        "power-profiles-daemon", 
         "battery",
-        "battery#bat2",
         "custom/power"
     ],
 
@@ -74,6 +75,18 @@
         "format-ethernet": "  {ipaddr}",
         "format-disconnected": "⚠  Offline",
         "tooltip-format": "{essid} - {ipaddr}/{cidr}"
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Perfil: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "",
+            "power-saver": ""
+        }
     },
 
     "battery": {

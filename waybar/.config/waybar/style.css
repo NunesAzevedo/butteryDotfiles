@@ -59,7 +59,7 @@ window#waybar {
 }
 
 /* Espaçamento e cores dos módulos */
-#clock, #cpu, #memory, #temperature, #pulseaudio, #network, #battery, #custom-power {
+#tray, #cpu, #memory, #temperature, #pulseaudio, #network, #power-profiles-daemon, #battery {
     padding: 0 8px;
     color: #cdd6f4;
 }
@@ -75,4 +75,17 @@ window#waybar {
     color: #f38ba8;
     padding-left: 12px;
     padding-right: 5px;
+}
+
+/* Cores dos Perfis de Energia */
+#power-profiles-daemon.performance {
+    color: #f38ba8; /* Vermelho suave para indicar alto consumo */
+}
+
+#power-profiles-daemon.balanced {
+    color: #89b4fa; /* Azul suave para balanceado */
+}
+
+#power-profiles-daemon.power-saver {
+    color: #a6e3a1; /* Verde suave para economia de bateria */
 }
