@@ -13,14 +13,14 @@
         "clock"
     ],
     "modules-right": [
-        "tray",
         "cpu",
         "memory",
         "temperature",
         "pulseaudio",
+        "tray",
         "network",
-        "power-profiles-daemon", 
         "battery",
+        "power-profiles-daemon", 
         "custom/power"
     ],
 
@@ -71,10 +71,13 @@
     },
 
     "network": {
-        "format-wifi": "  {signalStrength}%",
-        "format-ethernet": "  {ipaddr}",
-        "format-disconnected": "⚠  Offline",
-        "tooltip-format": "{essid} - {ipaddr}/{cidr}"
+        // "format-wifi": "   {signalStrength}%",
+        "format-wifi": "{signalStrength}%",
+        "format-ethernet": " {ipaddr}",
+        "format-disconnected": "⚠ Offline",
+        "tooltip-format": "{essid} - {ipaddr}/{cidr}",
+        "on-click": "~/.config/hypr/scripts/wofi_wifi/wofi_wifi.sh",
+        "on-click-right": "nm-connection-editor"
     },
 
     "power-profiles-daemon": {
