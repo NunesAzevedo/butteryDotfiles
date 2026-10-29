@@ -32,29 +32,19 @@ map("n", "<leader>ms", function()
   vim.cmd "wincmd h"
 end, { desc = "Markdown Reading Pane" })
 
--- Switch between source (.c, .cpp, .cc) and header (.h, .hpp, .hh) using clangd
-map("n", "<leader>sh", function()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients { bufnr = bufnr, name = "clangd" }
+-- Git: who changed this line and in which commit (popup with the full commit message)
+map("n", "<leader>gb", "<cmd>Gitsigns blame_line full=true<CR>", { desc = "Git Blame current line" })
 
-  if #clients == 0 then
-    vim.notify("O clangd não está ativo neste arquivo. Verifique com :LspInfo", vim.log.levels.WARN)
-    return
-  end
-
-  vim.lsp.buf_request(
-    bufnr,
-    "textDocument/switchSourceHeader",
-    { uri = vim.uri_from_bufnr(bufnr) },
-    function(err, result)
-      if err then
-        vim.notify("Erro ao buscar arquivo: " .. tostring(err), vim.log.levels.ERROR)
-      elseif not result then
-        vim.notify("Arquivo correspondente não encontrado pelo clangd.", vim.log.levels.WARN)
-      else
-        vim.cmd("edit " .. vim.uri_to_fname(result))
-      end
+-- C/C++: switch between source (.c/.cpp) and header (.h/.hpp).
+-- Buffer-local, only where clangd is attached (the command comes from nvim-lspconfig)
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.name == "clangd" then
+      map("n", "<leader>sh", "<cmd>LspClangdSwitchSourceHeader<CR>", {
+        buffer = args.buf,
+        desc = "C/C++ Switch source/header",
+      })
     end
-  )
-end, { desc = "C/C++ Alternar Source/Header (LSP)" })
-
+  end,
+})

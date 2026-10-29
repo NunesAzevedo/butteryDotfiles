@@ -6,6 +6,26 @@ Main uses: C/C++, Python/Jupyter, LaTeX, Typst and quick markdown notes.
 NvChad is loaded **as a plugin**: it provides sane defaults (UI, theme, completion, telescope,
 file tree, keymaps) and this repo only overrides or adds what's needed.
 
+## Cheat sheet (most used keys, `<leader>` = Space)
+
+| Keys | Action |
+|---|---|
+| `gd` / `grr` | go to definition / list references |
+| `K` / `<C-w>d` | hover docs / full error message of the current line |
+| `<leader>fs` | find symbol (function, class...) in the project |
+| `<leader>ff` / `<leader>fw` | find file / grep text in the project |
+| `<leader>ci` / `<leader>co` | who calls this function / what it calls |
+| `<leader>sh` | C/C++ switch source/header |
+| `<leader>o` | outline side panel |
+| `<leader>fd` | all errors and warnings |
+| `<leader>ra` / `gra` | rename symbol / code actions (quick fixes) |
+| `<leader>fm` | format file |
+| `<leader>gb` | git blame current line |
+| `<A-i>` | floating terminal (toggle) |
+| `za` / `zR` / `zM` | toggle fold / open all / close all |
+
+Press `<leader>` and wait for which-key to list everything; `<leader>ch` opens NvChad's cheatsheet.
+
 ## Directory layout
 
 ```
@@ -198,7 +218,8 @@ Press `<leader>` and wait to see them all in which-key, or run `:Telescope keyma
 | `;` | enter command mode |
 | `jk` (insert) | escape |
 | `<leader>ms` | markdown preview pane (glow) |
-| `<leader>sh` | C/C++ switch source/header |
+| `<leader>sh` | C/C++ switch source/header (only in buffers with clangd) |
+| `<leader>gb` | git blame current line (popup with full commit) |
 | `<leader>ih` | toggle LSP inlay hints |
 | `<leader>m*` | Jupyter (molten), see table above |
 
