@@ -1,5 +1,6 @@
 require("nvchad.configs.lspconfig").defaults()
 
+-- Servidores ativos. Ajustes específicos de cada um ficam em after/lsp/<servidor>.lua
 local servers = {
   "jedi-language-server",
   "html",
@@ -13,16 +14,6 @@ local servers = {
   "asm-lsp",
   "lua",
 }
-
-vim.lsp.config.clangd = vim.tbl_deep_extend("force", vim.lsp.config.clangd or {}, {
-  cmd = {
-    "clangd",
-    "--background-index",
-    "--compile-commands-dir=.", 
-    "--header-insertion=iwyu",
-  }
-})
-
 
 vim.lsp.enable(servers)
 
