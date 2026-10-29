@@ -9,6 +9,11 @@ map("i", "jk", "<ESC>")
 
 -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
 
+-- Show/hide inlay hints (parameter names and inferred types shown inline by the LSP)
+map("n", "<leader>ih", function()
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+end, { desc = "LSP Toggle inlay hints" })
+
 -- Open glow in a side pane to preview markdown
 map("n", "<leader>ms", function()
   -- Open a fixed-width terminal on the right

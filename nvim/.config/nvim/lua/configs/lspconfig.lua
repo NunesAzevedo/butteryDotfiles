@@ -8,7 +8,7 @@ local servers = {
   "neocmake",
 
   -- Python
-  "jedi_language_server", -- completion, hover, go-to-definition
+  "basedpyright", -- completion, navigation, auto-imports, type checking
   "ruff", -- linting
 
   -- Others

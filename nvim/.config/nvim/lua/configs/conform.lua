@@ -7,7 +7,7 @@ local options = {
     c = { "clang-format" },
     cpp = { "clang-format" },
     -- cmake = { "cmake_format" },
-    python = { "ruff_format" },
+    python = { "ruff_organize_imports", "ruff_format" },
     rust = { "rustfmt" },
     asm = { "asmfmt" },
   },

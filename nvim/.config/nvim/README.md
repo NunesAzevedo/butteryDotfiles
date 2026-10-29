@@ -12,11 +12,13 @@ file tree, keymaps) and this repo only overrides or adds what's needed.
 nvim/
 ├── init.lua                 entry point: bootstraps lazy.nvim, loads NvChad + lua/plugins/
 ├── lazy-lock.json           exact plugin versions (commit it; restore with :Lazy restore)
-├── after/lsp/
-│   └── <server>.lua         per-LSP-server tweaks (one file per server)
+├── after/lsp/               per-LSP-server tweaks (one file per server)
+│   ├── clangd.lua           flags: indexing, RAM usage, cross-compilers
+│   ├── basedpyright.lua     .venv detection, type-checking level
+│   └── ruff.lua             lint only (hover left to basedpyright)
 └── lua/
     ├── chadrc.lua           NvChad UI/theme options + Mason skip list
-    ├── options.lua          editor options (vim.opt / vim.g)
+    ├── options.lua          editor options (vim.opt / vim.g), Python provider, WSL clipboard
     ├── autocmds.lua         automatic commands (run code on events, e.g. FileType)
     ├── mappings.lua         general keymaps
     ├── configs/
@@ -86,22 +88,53 @@ definitions from nvim-lspconfig.
 |---|---|---|
 | C / C++ | `clangd` | needs `compile_commands.json` (see below) |
 | CMake | `neocmake` | |
-| Python | `jedi_language_server` + `ruff` | jedi: completion/navigation, ruff: linting |
+| Python | `basedpyright` + `ruff` | basedpyright: completion/navigation/auto-imports/types, ruff: linting |
 | Lua | `lua_ls` | knows the Neovim API, useful for editing this config |
 | Rust | `rust_analyzer` | from rustup |
 | Assembly | `asm_lsp` | built with cargo by Mason |
 | HTML / CSS | `html`, `cssls` | |
 
-### C/C++ projects
+Useful LSP keys (Neovim built-ins + NvChad + ours):
 
-clangd needs to know the compile flags. For CMake projects, generate the database:
+| Keys | Action |
+|---|---|
+| `gd` / `gD` | go to definition / declaration |
+| `grr` | list references (where this symbol is used, across files) |
+| `gri` | go to implementation |
+| `K` | hover docs |
+| `<leader>ra` | rename symbol in the whole project |
+| `gra` | code actions (quick fixes, add missing include/import) |
+| `]d` / `[d` | next / previous diagnostic |
+| `<C-s>` (insert) | function signature help |
+| `<leader>ih` | toggle inlay hints |
 
-```sh
-cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-```
+**Inlay hints** are extra hints drawn inline by the LSP (they are not in the file):
+parameter names at call sites and inferred types, e.g. `motor_speed(rpm: 10)` or
+`auto x: int = ...`. Off by default, toggle with `<leader>ih`.
 
-clangd finds `build/compile_commands.json` automatically. For plain Makefiles, use
-[`bear`](https://github.com/rizsotto/Bear): `bear -- make`.
+### C/C++ projects (clangd)
+
+clangd only understands a project (include paths, macros, other files) through a
+**`compile_commands.json`**. Without it, each file is analyzed alone: go-to-definition,
+completion of functions from other files and references all break.
+
+- **CMake:** `CMAKE_EXPORT_COMPILE_COMMANDS=ON` is exported in `~/.zshrc`, so every
+  `cmake -B build` generates `build/compile_commands.json`, which clangd finds by itself.
+  Existing build folders need `cmake` to be re-run once.
+- **Plain Makefiles:** generate it with [`bear`](https://github.com/rizsotto/Bear): `bear -- make`
+  (re-run when files are added).
+- **Firmware (ARM / ESP-IDF):** clangd is allowed to query the cross-compilers
+  (`--query-driver` in `after/lsp/clangd.lua`) and GCC-only flags that clang doesn't know
+  are dropped in `~/.config/clangd/config.yaml` (the `clangd` stow package).
+- **Indexing threads:** 4 by default; override per machine with `export CLANGD_JOBS=8`
+  (then `:LspRestart`).
+- **Check what clangd sees:** `clangd --check=path/to/file.cpp` from the project root.
+
+### Python projects (basedpyright)
+
+If the project root has a `.venv/` (or `venv/`), basedpyright uses its interpreter
+automatically, so packages installed there get completion even without activating the venv.
+Type checking runs in `standard` mode, on open files only, to keep it light.
 
 ## Formatting
 
@@ -137,14 +170,23 @@ Press `<leader>` and wait to see them all in which-key, or run `:Telescope keyma
 | `jk` (insert) | escape |
 | `<leader>ms` | markdown preview pane (glow) |
 | `<leader>sh` | C/C++ switch source/header |
+| `<leader>ih` | toggle LSP inlay hints |
 | `<leader>m*` | Jupyter (molten), see table above |
+
+## WSL
+
+The same config is used on WSL. The only difference, the clipboard, is handled in
+`lua/options.lua`: on WSL, Neovim uses `win32yank.exe` if it's on PATH (faster),
+otherwise falls back to `clip.exe` / `powershell.exe`. Nothing to change per machine.
 
 ## Setting up on a new computer
 
-1. System packages (Arch): `neovim git stow ripgrep tree-sitter-cli clang rustup
-   texlive latexmk zathura typst glow imagemagick python`
+1. System packages (Arch): `neovim git stow ripgrep tree-sitter-cli clang bear rustup
+   texlive latexmk zathura typst glow imagemagick python`.
+   Also stow the `zsh` and `clangd` packages (build env vars + clangd config).
 2. Rust toolchain (needed by rust_analyzer and to build asm-lsp): `rustup default stable`
-3. Python provider for molten (a dedicated venv, path set in `lua/options.lua`):
+3. Python provider for molten (a dedicated venv, path set in `lua/options.lua`;
+   skipped automatically if it doesn't exist):
    ```sh
    python -m venv ~/.config/nvim-venv
    ~/.config/nvim-venv/bin/pip install pynvim jupyter_client
