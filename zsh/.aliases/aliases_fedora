@@ -91,6 +91,9 @@ alias gClonaTodosOsRepositoriosRemotos='sh ~/.scripts/clonaTodosOsRepositorios.s
 # Atalhos Makefile
 #export MAKEFLAGS="-j$(($(nproc) - 4))"
 alias m='make -j4'
+alias m6='make -j6'
+alias m8='make -j8'
+alias m10='make -j10'
 alias ma='make all'
 alias mr='make run'
 alias mc='make clean'
