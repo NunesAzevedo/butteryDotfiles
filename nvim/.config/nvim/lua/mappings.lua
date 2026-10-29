@@ -9,15 +9,15 @@ map("i", "jk", "<ESC>")
 
 -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
 
--- Abre o glow na lateral para visualizar markdown
+-- Open glow in a side pane to preview markdown
 map("n", "<leader>ms", function()
-  -- Abre um terminal à direita com tamanho fixo
+  -- Open a fixed-width terminal on the right
   vim.cmd("rightbelow vnew | vertical resize 60 | terminal glow " .. vim.fn.expand "%")
-  -- Volta para a janela principal para você continuar navegando
+  -- Jump back to the main window
   vim.cmd "wincmd h"
 end, { desc = "Markdown Reading Pane" })
 
--- Alternar entre Source (.c, .cpp, .cc) e Header (.h, .hpp, .hh) via Clangd (LSP nativo)
+-- Switch between source (.c, .cpp, .cc) and header (.h, .hpp, .hh) using clangd
 map("n", "<leader>sh", function()
   local bufnr = vim.api.nvim_get_current_buf()
   local clients = vim.lsp.get_clients { bufnr = bufnr, name = "clangd" }

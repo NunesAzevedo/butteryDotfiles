@@ -1,11 +1,13 @@
--- Ajustes do clangd (C/C++).
--- Arquivos em after/lsp/<nome>.lua são mesclados por cima da config padrão
--- do nvim-lspconfig. O nome do arquivo deve ser o nome do servidor no lspconfig.
+-- clangd (C/C++) tweaks.
+-- Files in after/lsp/<name>.lua are merged on top of nvim-lspconfig's defaults.
+-- The file name must be the server's lspconfig name.
+--
+-- clangd finds compile_commands.json on its own by searching the file's parent
+-- directories and their build/ subfolders, so no --compile-commands-dir is needed.
 return {
   cmd = {
     "clangd",
     "--background-index",
-    "--compile-commands-dir=.",
     "--header-insertion=iwyu",
   },
 }

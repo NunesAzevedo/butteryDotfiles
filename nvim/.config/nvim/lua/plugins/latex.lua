@@ -2,7 +2,7 @@
 return {
   {
     "lervag/vimtex",
-    lazy = false, -- o VimTeX recomenda não carregar de forma preguiçosa
+    lazy = false, -- VimTeX should not be lazy-loaded
     init = function()
       vim.g.vimtex_view_method = "zathura"
       vim.g.vimtex_compiler_method = "latexmk"

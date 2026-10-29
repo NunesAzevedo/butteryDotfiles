@@ -1,12 +1,12 @@
 -- Python / Jupyter
 return {
-  -- Molten: roda um kernel do Jupyter dentro do buffer
+  -- Molten: runs a Jupyter kernel from inside the buffer
   {
     "benlubas/molten-nvim",
     version = "^1.0.0",
     build = ":UpdateRemotePlugins",
     ft = { "python", "markdown", "quarto", "ipynb" },
-    -- O lazy.nvim cria estes atalhos e carrega o plugin no primeiro uso
+    -- lazy.nvim creates these keymaps and loads the plugin on first use
     keys = {
       { "<leader>mi", ":MoltenInit<CR>", mode = "n", desc = "Jupyter: Inicializar" },
       { "<leader>me", ":MoltenEvaluateOperator<CR>", mode = "n", desc = "Jupyter: Avaliar operador" },
@@ -15,17 +15,17 @@ return {
       { "<leader>mo", ":MoltenShowOutput<CR>", mode = "n", desc = "Jupyter: Mostrar output" },
     },
     init = function()
-      -- vim.g.molten_image_provider = "image.nvim" -- DESATIVADO temporariamente
+      -- vim.g.molten_image_provider = "image.nvim" -- temporarily disabled
       vim.g.molten_output_win_max_height = 20
       vim.g.molten_auto_open_output = false
     end,
   },
 
-  -- image.nvim: desenha as imagens geradas (gráficos) dentro do buffer
+  -- image.nvim: draws generated images (plots) inside the buffer
   {
     "3rd/image.nvim",
     opts = {
-      -- Use "ueberzug" se o terminal não suportar o protocolo gráfico do Kitty
+      -- Use "ueberzug" if the terminal doesn't support the Kitty graphics protocol
       backend = "kitty",
       processor = "magick_cli",
       max_width = 100,

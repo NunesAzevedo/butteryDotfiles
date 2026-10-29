@@ -14,6 +14,15 @@ M.base46 = {
   -- },
 }
 
+-- :MasonInstallAll installs every enabled LSP and conform formatter.
+-- Skip the ones that come from the system package manager instead.
+M.mason = {
+  skip = {
+    "clangd", -- pacman (clang)
+    "rust-analyzer", -- rustup
+  },
+}
+
 -- M.nvdash = { load_on_startup = true }
 -- M.ui = {
 --       tabufline = {
