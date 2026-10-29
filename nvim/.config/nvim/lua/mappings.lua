@@ -14,6 +14,16 @@ map("n", "<leader>ih", function()
   vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 end, { desc = "LSP Toggle inlay hints" })
 
+-- LSP pickers (Telescope): fuzzy search with preview
+map("n", "<leader>fs", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", { desc = "LSP Find symbol in project" })
+map("n", "<leader>fS", "<cmd>Telescope lsp_document_symbols<CR>", { desc = "LSP Find symbol in file" })
+map("n", "<leader>fr", "<cmd>Telescope lsp_references<CR>", { desc = "LSP Find references" })
+map("n", "<leader>fd", "<cmd>Telescope diagnostics<CR>", { desc = "LSP Find diagnostics (errors/warnings)" })
+
+-- Call hierarchy: who calls the function under the cursor / what it calls
+map("n", "<leader>ci", "<cmd>Telescope lsp_incoming_calls<CR>", { desc = "LSP Incoming calls (callers)" })
+map("n", "<leader>co", "<cmd>Telescope lsp_outgoing_calls<CR>", { desc = "LSP Outgoing calls (callees)" })
+
 -- Open glow in a side pane to preview markdown
 map("n", "<leader>ms", function()
   -- Open a fixed-width terminal on the right

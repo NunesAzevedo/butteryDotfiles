@@ -5,6 +5,12 @@ require "nvchad.options"
 -- local o = vim.o
 -- o.cursorlineopt ='both' -- to enable cursorline!
 
+-- Folding by syntax (treesitter): za toggle, zc close, zo open, zM close all, zR open all
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.o.foldlevel = 99 -- start with everything unfolded
+vim.o.foldtext = "" -- show a folded block as its first line, keeping syntax colors
+
 -- Re-enable the Python provider (NvChad disables it), needed by molten-nvim.
 -- It runs from a dedicated venv with pynvim and jupyter_client installed.
 local nvim_venv_python = vim.fn.expand "~/.config/nvim-venv/bin/python"

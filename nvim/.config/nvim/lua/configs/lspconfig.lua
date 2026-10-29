@@ -1,4 +1,5 @@
 require("nvchad.configs.lspconfig").defaults()
+dofile(vim.g.base46_cache .. "semantic_tokens") -- theme colors for semantic highlighting
 
 -- Enabled servers. Names must match nvim-lspconfig's names (see :help lspconfig-all),
 -- NOT Mason's package names. Per-server tweaks live in after/lsp/<server>.lua

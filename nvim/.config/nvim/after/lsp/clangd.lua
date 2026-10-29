@@ -10,6 +10,7 @@ return {
   cmd = {
     "clangd",
     "--background-index", -- index the whole project for references / workspace symbols
+    "--clang-tidy", -- extra bug-prone / modernize warnings (uses the project's .clang-tidy if any)
     "--header-insertion=iwyu", -- completing a symbol from another header adds its #include
     "--completion-style=detailed", -- one completion item per overload
     "--pch-storage=disk", -- keep precompiled headers on disk instead of RAM

@@ -8,6 +8,8 @@ local M = {}
 M.base46 = {
   theme = "gruvbox",
   transparency = true,
+  -- Theme colors for LSP semantic tokens (members, parameters, macros... colored by meaning)
+  integrations = { "semantic_tokens" },
   -- hl_override = {
   -- 	Comment = { italic = true },
   -- 	["@comment"] = { italic = true },
